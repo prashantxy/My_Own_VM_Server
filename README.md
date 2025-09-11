@@ -1,7 +1,7 @@
-## Vercel Deployement Server 
+# Vercel Deployement Server 
 
-# System Design
+## System Design
 
-# COre logic Redis+AWS+S3 
+## COre logic Redis+AWS+S3 
 
 #thanks to hkirat
