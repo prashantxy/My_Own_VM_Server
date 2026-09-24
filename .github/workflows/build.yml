@@ -1,0 +1,99 @@
+name: build
+run-name: build ${{ inputs.id }}
+
+# Triggered by the API worker (cloudflare/api) via workflow_dispatch.
+on:
+  workflow_dispatch:
+    inputs:
+      id:
+        required: true
+        type: string
+      repo_url:
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  # Runs untrusted user code (npm install / build), so it gets no secrets.
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Validate inputs
+        env:
+          ID: ${{ inputs.id }}
+          REPO_URL: ${{ inputs.repo_url }}
+        run: |
+          [[ "$ID" =~ ^[a-z0-9]{5,32}$ ]] || { echo "invalid id"; exit 1; }
+          [[ "$REPO_URL" =~ ^https:// ]] || { echo "repo_url must be https"; exit 1; }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Clone
+        env:
+          REPO_URL: ${{ inputs.repo_url }}
+        run: git clone --depth 1 -- "$REPO_URL" src
+
+      - name: Install and build
+        working-directory: src
+        run: |
+          npm install
+          npm run build
+
+      - name: Find build output
+        id: out
+        run: |
+          for d in dist build out; do
+            if [ -d "src/$d" ]; then echo "dir=src/$d" >> "$GITHUB_OUTPUT"; exit 0; fi
+          done
+          echo "No build output found (looked for dist/, build/, out/)"; exit 1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: ${{ steps.out.outputs.dir }}
+          retention-days: 1
+
+  # Fresh runner with R2 credentials; only copies the built files.
+  upload:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: site
+
+      - name: Sync to R2
+        env:
+          ID: ${{ inputs.id }}
+          BUCKET: ${{ vars.R2_BUCKET || 'vercel' }}
+          R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          # R2 doesn't support the newer default S3 checksums
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+        run: aws s3 sync site "s3://$BUCKET/dist/$ID" --endpoint-url "$R2_ENDPOINT" --delete
+
+  report:
+    needs: [build, upload]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report status to API
+        env:
+          ID: ${{ inputs.id }}
+          STATUS: ${{ needs.upload.result == 'success' && 'deployed' || 'failed' }}
+          API_URL: ${{ vars.API_URL }}
+          CALLBACK_SECRET: ${{ secrets.CALLBACK_SECRET }}
+        run: |
+          jq -n --arg id "$ID" --arg status "$STATUS" '{id: $id, status: $status}' |
+            curl -fsS -X POST "$API_URL/callback" \
+              -H "Authorization: Bearer $CALLBACK_SECRET" \
+              -H "Content-Type: application/json" \
+              --data @-
