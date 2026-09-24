@@ -47,3 +47,9 @@ export async function createDeployment(repoUrl: string): Promise<{ id: string } 
   if (!res.ok || !body.id) return { error: body.error ?? `API responded ${res.status}` };
   return { id: body.id };
 }
+
+// Where the build logs live: the workflow's runs page (run names include the deployment id).
+export function buildLogsUrl() {
+  const repo = process.env.GITHUB_REPO;
+  return repo ? `https://github.com/${repo}/actions/workflows/build.yml` : null;
+}

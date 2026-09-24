@@ -1,17 +1,30 @@
+import { CircleCheck, CircleX, LoaderCircle } from "lucide-react";
 import type { Status } from "@/lib/api";
 
-const styles: Record<Status, { label: string; dot: string; text: string }> = {
-  queued: { label: "Building", dot: "bg-amber-400 animate-pulse", text: "text-amber-600 dark:text-amber-400" },
-  deployed: { label: "Ready", dot: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400" },
-  failed: { label: "Error", dot: "bg-red-500", text: "text-red-600 dark:text-red-400" },
+export const statusMeta: Record<Status, { label: string; tone: string; Icon: typeof CircleCheck }> = {
+  queued: { label: "Building", tone: "text-warning", Icon: LoaderCircle },
+  deployed: { label: "Ready", tone: "text-success", Icon: CircleCheck },
+  failed: { label: "Error", tone: "text-danger", Icon: CircleX },
 };
 
-export function StatusBadge({ status }: { status: Status }) {
-  const s = styles[status];
+export function StatusIcon({ status, className = "size-4" }: { status: Status; className?: string }) {
+  const { tone, Icon } = statusMeta[status];
   return (
-    <span className={`inline-flex items-center gap-2 text-sm font-medium ${s.text}`}>
-      <span className={`size-2 rounded-full ${s.dot}`} />
-      {s.label}
+    <Icon
+      aria-hidden
+      strokeWidth={2}
+      className={`${className} shrink-0 ${tone} ${status === "queued" ? "motion-safe:animate-spin" : ""}`}
+    />
+  );
+}
+
+// Icon + text, so status never relies on color alone.
+export function StatusBadge({ status }: { status: Status }) {
+  const { label, tone } = statusMeta[status];
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-sm font-medium whitespace-nowrap ${tone}`}>
+      <StatusIcon status={status} className="size-3.5" />
+      {label}
     </span>
   );
 }

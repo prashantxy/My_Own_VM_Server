@@ -1,30 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { Deployment } from "@/lib/api";
-import { duration, repoName, timeAgo } from "@/lib/format";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { ArrowUpRight, CircleX, FileText, GitBranch, RotateCw } from "lucide-react";
+import { redeploy } from "@/app/actions";
+import type { Deployment, Status } from "@/lib/api";
+import { duration, repoName } from "@/lib/format";
+import { CopyButton } from "./copy-button";
 import { StatusBadge } from "./status-badge";
+import { TimeAgo } from "./time-ago";
+import { buttonClass, Spinner } from "./ui";
 
 type LiveDeployment = Deployment & { siteUrl: string | null };
 
 const POLL_MS = 3000;
 
-const steps = [
-  { key: "queued", label: "Queued", detail: "Build started on GitHub Actions" },
-  { key: "build", label: "Build", detail: "git clone, npm install, npm run build" },
-  { key: "upload", label: "Upload", detail: "Build output synced to R2" },
-  { key: "live", label: "Live", detail: "Served from the edge" },
-] as const;
+const announcements: Record<Status, string> = {
+  queued: "Build in progress",
+  deployed: "Deployment is live",
+  failed: "Deployment failed",
+};
 
-export function DeploymentLive({ initial }: { initial: LiveDeployment }) {
+export function DeploymentLive({ initial, logsUrl }: { initial: LiveDeployment; logsUrl: string | null }) {
   const [deployment, setDeployment] = useState(initial);
   const [now, setNow] = useState(() => Date.now());
   const [pollError, setPollError] = useState(false);
+  const [announcement, setAnnouncement] = useState("");
+  const prevStatus = useRef(initial.status);
+  const { status, siteUrl, repoUrl } = deployment;
+  const building = status === "queued";
+
+  // Tick the elapsed timer every second while building.
+  useEffect(() => {
+    if (!building) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [building]);
 
   useEffect(() => {
-    if (deployment.status !== "queued") return;
+    if (!building) return;
     const timer = setInterval(async () => {
-      setNow(Date.now());
       try {
         const res = await fetch(`/api/deployments/${deployment.id}`, { cache: "no-store" });
         if (!res.ok) throw new Error();
@@ -35,105 +49,284 @@ export function DeploymentLive({ initial }: { initial: LiveDeployment }) {
       }
     }, POLL_MS);
     return () => clearInterval(timer);
-  }, [deployment.id, deployment.status]);
+  }, [deployment.id, building]);
 
-  const { status } = deployment;
-  // The API only reports queued -> deployed|failed, so the middle steps show as in-progress together.
-  const doneCount = status === "deployed" ? steps.length : 1;
-  const elapsed =
-    status === "queued"
-      ? duration(deployment.createdAt, new Date(now).toISOString())
-      : duration(deployment.createdAt, deployment.updatedAt);
+  useEffect(() => {
+    if (prevStatus.current !== status) setAnnouncement(announcements[status]);
+    prevStatus.current = status;
+  }, [status]);
+
+  const elapsed = building
+    ? duration(deployment.createdAt, new Date(now).toISOString())
+    : duration(deployment.createdAt, deployment.updatedAt);
+  const host = siteUrl?.replace("https://", "");
 
   return (
-    <div className="space-y-8">
-      <div className="grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3">
-        <Field label="Status">
-          <StatusBadge status={status} />
-        </Field>
-        <Field label="Duration">
-          <span suppressHydrationWarning className="font-mono text-sm">{elapsed || "—"}</span>
-        </Field>
-        <Field label="Created">
-          <span suppressHydrationWarning className="text-sm">{timeAgo(deployment.createdAt, now)}</span>
-        </Field>
-        <Field label="Repository" wide>
-          {deployment.repoUrl ? (
-            <a href={deployment.repoUrl} target="_blank" rel="noreferrer" className="truncate font-mono text-sm hover:underline">
-              {repoName(deployment.repoUrl)}
-            </a>
-          ) : (
-            <span className="text-sm text-muted">—</span>
-          )}
-        </Field>
-        <Field label="Domain" wide>
-          {status === "deployed" && deployment.siteUrl ? (
-            <a href={deployment.siteUrl} target="_blank" rel="noreferrer" className="truncate font-mono text-sm text-blue-600 hover:underline dark:text-blue-400">
-              {deployment.siteUrl.replace("https://", "")}
-            </a>
-          ) : (
-            <span className="font-mono text-sm text-muted">{deployment.siteUrl?.replace("https://", "") ?? "SITES_DOMAIN not set"}</span>
-          )}
-        </Field>
+    <div className="space-y-10">
+      <p role="status" className="sr-only">
+        {announcement}
+      </p>
+
+      <div className="enter flex flex-wrap items-center gap-2" style={{ "--i": 1 } as React.CSSProperties}>
+        {status === "deployed" && siteUrl && (
+          <a href={siteUrl} target="_blank" rel="noreferrer" className={buttonClass("primary", "ps-3.5 pe-3")}>
+            Visit
+            <ArrowUpRight aria-hidden strokeWidth={2} className="size-4" />
+          </a>
+        )}
+        {status === "deployed" && siteUrl && <CopyButton value={siteUrl} />}
+        {repoUrl && !building && <RedeployButton repoUrl={repoUrl} />}
+        {repoUrl && (
+          <a href={repoUrl} target="_blank" rel="noreferrer" className={buttonClass("secondary")}>
+            <GitBranch aria-hidden strokeWidth={1.5} className="size-4" />
+            Source
+          </a>
+        )}
       </div>
 
-      <ol className="space-y-0">
-        {steps.map((step, i) => {
-          const failedHere = status === "failed" && i === 1;
-          const done = i < doneCount && !failedHere;
-          const active = status === "queued" && i === 1;
-          const skipped = status === "failed" && i > 1;
-          return (
-            <li key={step.key} className="relative flex gap-4 pb-6 last:pb-0">
-              {i < steps.length - 1 && (
-                <span className="absolute left-[11px] top-7 h-[calc(100%-1.75rem)] w-px bg-border" aria-hidden />
-              )}
-              <span
-                className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border text-xs ${
-                  failedHere
-                    ? "border-red-500 bg-red-500 text-white"
-                    : done
-                      ? "border-emerald-500 bg-emerald-500 text-white"
-                      : active
-                        ? "border-amber-400"
-                        : "border-border text-muted"
-                }`}
-                aria-hidden
-              >
-                {failedHere ? "✕" : done ? "✓" : active ? <span className="size-2 animate-pulse rounded-full bg-amber-400" /> : i + 1}
-              </span>
-              <div className={skipped ? "opacity-40" : ""}>
-                <p className="text-sm font-medium">{step.label}</p>
-                <p className="text-sm text-muted">{failedHere ? "Build or upload failed. Check the GitHub Actions run logs." : step.detail}</p>
-              </div>
-            </li>
-          );
-        })}
-      </ol>
+      <Preview deployment={deployment} elapsed={elapsed} logsUrl={logsUrl} />
 
-      {status === "deployed" && deployment.siteUrl && (
-        <a
-          href={deployment.siteUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex h-11 items-center rounded-lg bg-foreground px-5 text-sm font-medium text-background hover:opacity-85"
-        >
-          Visit site ↗
-        </a>
-      )}
+      <dl
+        className="enter grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4"
+        style={{ "--i": 3 } as React.CSSProperties}
+      >
+        <Detail label="Status">
+          <StatusBadge status={status} />
+        </Detail>
+        <Detail label="Duration">
+          <span suppressHydrationWarning className="tabular-nums">
+            {elapsed || "—"}
+          </span>
+        </Detail>
+        <Detail label="Created">
+          <TimeAgo iso={deployment.createdAt} />
+        </Detail>
+        <Detail label="Source">
+          {repoUrl ? (
+            <a href={repoUrl} target="_blank" rel="noreferrer" className="block truncate underline decoration-border underline-offset-4 hover:decoration-foreground" title={repoUrl}>
+              {repoName(repoUrl)}
+            </a>
+          ) : (
+            "—"
+          )}
+        </Detail>
+        <Detail label="Domain" wide>
+          {host ? (
+            status === "deployed" ? (
+              <a href={siteUrl!} target="_blank" rel="noreferrer" className="block truncate font-mono underline decoration-border underline-offset-4 hover:decoration-foreground">
+                {host}
+              </a>
+            ) : (
+              <span className="block truncate font-mono text-muted">{host}</span>
+            )
+          ) : (
+            <span className="text-muted">Set SITES_DOMAIN to show the site URL</span>
+          )}
+        </Detail>
+      </dl>
+
+      <section aria-labelledby="steps-heading" className="enter space-y-4" style={{ "--i": 4 } as React.CSSProperties}>
+        <h2 id="steps-heading" className="text-sm font-medium">
+          Build steps
+        </h2>
+        <Steps status={status} />
+      </section>
 
       {pollError && (
-        <p className="text-sm text-amber-600 dark:text-amber-400">Lost contact with the API, retrying…</p>
+        <p className="text-sm text-warning">Lost contact with the API. Retrying…</p>
       )}
     </div>
   );
 }
 
-function Field({ label, wide, children }: { label: string; wide?: boolean; children: React.ReactNode }) {
+function Detail({ label, wide, children }: { label: string; wide?: boolean; children: React.ReactNode }) {
   return (
-    <div className={`min-w-0 bg-background p-4 ${wide ? "sm:col-span-3" : ""}`}>
-      <p className="mb-1 text-xs uppercase tracking-wide text-muted">{label}</p>
-      <div className="flex min-w-0">{children}</div>
+    <div className={`min-w-0 ${wide ? "col-span-2 sm:col-span-4" : ""}`}>
+      <dt className="mb-1 text-[0.8125rem] text-muted">{label}</dt>
+      <dd className="min-w-0 text-sm">{children}</dd>
     </div>
   );
 }
+
+function RedeployButton({ repoUrl }: { repoUrl: string }) {
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string>();
+
+  return (
+    <>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() =>
+          startTransition(async () => {
+            const result = await redeploy(repoUrl);
+            setError(result?.error);
+          })
+        }
+        className={buttonClass("secondary")}
+      >
+        {pending ? <Spinner /> : <RotateCw aria-hidden strokeWidth={2} className="size-4" />}
+        Redeploy
+      </button>
+      {error && (
+        <p role="alert" className="basis-full text-sm text-danger">
+          {error}
+        </p>
+      )}
+    </>
+  );
+}
+
+function Preview({ deployment, elapsed, logsUrl }: { deployment: LiveDeployment; elapsed: string; logsUrl: string | null }) {
+  const { status, siteUrl } = deployment;
+  const host = siteUrl?.replace("https://", "") ?? deployment.id;
+
+  return (
+    <div className="enter rounded-2xl bg-surface p-1.5 shadow-card" style={{ "--i": 2 } as React.CSSProperties}>
+      <div className="flex h-8 items-center gap-3 px-2.5">
+        <span aria-hidden className="flex gap-1.5">
+          <span className="size-2 rounded-full bg-border" />
+          <span className="size-2 rounded-full bg-border" />
+          <span className="size-2 rounded-full bg-border" />
+        </span>
+        <span className="min-w-0 flex-1 truncate text-center font-mono text-xs text-muted">{host}</span>
+        <span aria-hidden className="w-[2.625rem]" />
+      </div>
+
+      <div
+        className={`relative overflow-hidden rounded-[10px] bg-background shadow-card ${
+          status === "deployed" ? "aspect-[16/10]" : "h-64"
+        }`}
+      >
+        {status === "deployed" && siteUrl ? (
+          <a href={siteUrl} target="_blank" rel="noreferrer" aria-label={`Open ${host} in a new tab`} className="group absolute inset-0 block rounded-[10px]">
+            <iframe
+              src={siteUrl}
+              title={`Preview of ${host}`}
+              loading="lazy"
+              tabIndex={-1}
+              aria-hidden
+              sandbox="allow-scripts allow-same-origin"
+              className="pointer-events-none h-[200%] w-[200%] origin-top-left scale-50 border-0 bg-white"
+            />
+            <span className="absolute end-3 bottom-3 inline-flex items-center gap-1 rounded-lg bg-background/90 px-2.5 py-1.5 text-xs font-medium opacity-0 shadow-card backdrop-blur transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
+              Open site
+              <ArrowUpRight aria-hidden strokeWidth={2} className="size-3.5" />
+            </span>
+          </a>
+        ) : status === "queued" ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
+            <Spinner className="size-5 text-warning" />
+            <div>
+              <p className="text-sm font-medium">Building</p>
+              <p suppressHydrationWarning className="text-sm text-muted tabular-nums">
+                {elapsed ? `${elapsed} elapsed` : "Starting…"}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
+            <CircleX aria-hidden strokeWidth={1.5} className="size-6 text-danger" />
+            <div className="max-w-xs">
+              <p className="text-sm font-medium">Build failed</p>
+              <p className="text-sm text-pretty text-muted">
+                The build or upload step didn’t finish. The workflow logs show which command failed.
+              </p>
+            </div>
+            {logsUrl && (
+              <a href={logsUrl} target="_blank" rel="noreferrer" className={buttonClass("secondary")}>
+                <FileText aria-hidden strokeWidth={2} className="size-4" />
+                View build logs
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const steps = [
+  { label: "Queued", detail: "Workflow started on GitHub Actions" },
+  { label: "Build", detail: "git clone, npm install, npm run build" },
+  { label: "Upload", detail: "Build output synced to R2" },
+  { label: "Live", detail: "Served from Cloudflare’s edge" },
+];
+
+type StepState = "done" | "active" | "failed" | "pending";
+
+function stepState(status: Status, i: number): StepState {
+  if (status === "deployed") return "done";
+  if (i === 0) return "done";
+  // The API reports only queued → deployed | failed, so Build + Upload share one in-progress state.
+  if (status === "queued") return i <= 2 ? "active" : "pending";
+  return i <= 2 ? (i === 1 ? "failed" : "pending") : "pending";
+}
+
+function Steps({ status }: { status: Status }) {
+  return (
+    <ol className="space-y-0">
+      {steps.map((step, i) => {
+        const state = stepState(status, i);
+        return (
+          <li key={step.label} className="relative flex gap-3.5 pb-5 last:pb-0">
+            {i < steps.length - 1 && (
+              <span
+                aria-hidden
+                className={`absolute start-[9.5px] top-6 bottom-1 w-px ${state === "done" ? "bg-success/40" : "bg-border"}`}
+              />
+            )}
+            <StepMarker state={state} />
+            <div className={`-mt-px ${state === "pending" ? "text-muted" : ""}`}>
+              <p className="text-sm font-medium">
+                {step.label}
+                <span className="sr-only">, {stateLabel[state]}</span>
+              </p>
+              <p className="text-sm text-muted">
+                {state === "failed" ? "Failed. Open the build logs to see the error." : step.detail}
+              </p>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+const stateLabel: Record<StepState, string> = {
+  done: "complete",
+  active: "in progress",
+  failed: "failed",
+  pending: "not started",
+};
+
+function StepMarker({ state }: { state: StepState }) {
+  const ring = "relative flex size-5 shrink-0 items-center justify-center rounded-full";
+  if (state === "done") {
+    return (
+      <span aria-hidden className={`${ring} bg-success text-background`}>
+        <svg viewBox="0 0 12 12" className="size-3" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <path d="m2.5 6.25 2.25 2.25 4.75-5" />
+        </svg>
+      </span>
+    );
+  }
+  if (state === "failed") {
+    return (
+      <span aria-hidden className={`${ring} bg-danger text-background`}>
+        <svg viewBox="0 0 12 12" className="size-3" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+          <path d="m3.5 3.5 5 5m0-5-5 5" />
+        </svg>
+      </span>
+    );
+  }
+  if (state === "active") {
+    return (
+      <span aria-hidden className={`${ring} bg-background shadow-[inset_0_0_0_1.5px_var(--warning)]`}>
+        <span className="size-2 rounded-full bg-warning motion-safe:animate-pulse" />
+      </span>
+    );
+  }
+  return <span aria-hidden className={`${ring} bg-background shadow-[inset_0_0_0_1.5px_var(--border)]`} />;
+}
+

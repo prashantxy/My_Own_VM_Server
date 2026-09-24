@@ -1,34 +1,91 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --muted: #6b6b6b;
-  --border: #e5e5e5;
-  --surface: #fafafa;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.205 0 0);
+  --muted: oklch(0.52 0 0);
+  --surface: oklch(0.985 0 0);
+  --border: oklch(0.922 0 0);
+  --focus: oklch(0.58 0.19 255);
+
+  --success: oklch(0.52 0.13 150);
+  --warning: oklch(0.56 0.13 65);
+  --danger: oklch(0.55 0.2 27);
+
+  --sh-card:
+    0 0 0 1px oklch(0 0 0 / 0.06),
+    0 1px 2px -1px oklch(0 0 0 / 0.06),
+    0 2px 4px 0 oklch(0 0 0 / 0.04);
+  --sh-card-hover:
+    0 0 0 1px oklch(0 0 0 / 0.08),
+    0 1px 2px -1px oklch(0 0 0 / 0.08),
+    0 2px 4px 0 oklch(0 0 0 / 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.97 0 0);
+    --muted: oklch(0.72 0 0);
+    --surface: oklch(0.18 0 0);
+    --border: oklch(0.275 0 0);
+    --focus: oklch(0.7 0.16 255);
+
+    --success: oklch(0.78 0.15 150);
+    --warning: oklch(0.82 0.13 80);
+    --danger: oklch(0.72 0.17 22);
+
+    --sh-card: 0 0 0 1px oklch(1 0 0 / 0.08);
+    --sh-card-hover: 0 0 0 1px oklch(1 0 0 / 0.13);
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
-  --color-border: var(--border);
   --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-focus: var(--focus);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --shadow-card: var(--sh-card);
+  --shadow-card-hover: var(--sh-card-hover);
+
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --muted: #a1a1a1;
-    --border: #262626;
-    --surface: #111111;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: oklch(0.58 0.19 255 / 0.2);
+}
+
+/* Staged entrance for page content; runs once per navigation, opt-in for motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .enter {
+    animation: enter 400ms var(--ease-out-strong) both;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+
+  @keyframes enter {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+      filter: blur(2px);
+    }
+  }
 }

@@ -12,6 +12,8 @@
     // URL of the API worker (cloudflare/api)
     "API_URL": "https://vercel-api.<your-subdomain>.workers.dev",
     // domain the serve worker (cloudflare/serve) answers on: <id>.<SITES_DOMAIN>
-    "SITES_DOMAIN": "<your-domain>"
+    "SITES_DOMAIN": "<your-domain>",
+    // repo running the build workflow, used to link to build logs
+    "GITHUB_REPO": "prashantxy/My_Own_VM_Server"
   }
 }

@@ -1,55 +1,67 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
+import { ArrowRight, GitBranch } from "lucide-react";
 import { deploy, type DeployState } from "@/app/actions";
+import { buttonClass, Kbd, Spinner } from "./ui";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="h-11 shrink-0 rounded-lg bg-foreground px-5 text-sm font-medium text-background transition-opacity hover:opacity-85 disabled:cursor-wait disabled:opacity-60"
-    >
-      {pending ? "Starting…" : "Deploy"}
+    <button type="submit" disabled={pending} className={buttonClass("primary", "h-11 ps-4 pe-3.5 sm:h-10")}>
+      <span>Deploy</span>
+      {pending ? <Spinner /> : <ArrowRight aria-hidden strokeWidth={2} className="size-4" />}
     </button>
   );
 }
 
 export function DeployForm() {
   const [state, action] = useActionState<DeployState, FormData>(deploy, {});
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (state.error) inputRef.current?.focus();
+  }, [state]);
 
   return (
-    <form action={action} className="w-full">
+    <form action={action} noValidate>
       <label htmlFor="repoUrl" className="mb-2 block text-sm font-medium">
-        Git repository URL
+        Repository URL
       </label>
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <input
-          id="repoUrl"
-          name="repoUrl"
-          type="url"
-          required
-          defaultValue={state.repoUrl}
-          placeholder="https://github.com/user/my-vite-app"
-          aria-invalid={!!state.error}
-          aria-describedby={state.error ? "repoUrl-error" : "repoUrl-hint"}
-          className="h-11 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 font-mono text-sm outline-none transition-colors placeholder:text-muted focus:border-foreground"
-        />
+      <div className="flex flex-col gap-3 sm:flex-row sm:gap-2">
+        <div
+          className={`flex h-11 min-w-0 items-center sm:flex-1 gap-2.5 rounded-lg border bg-background ps-3 transition-[border-color,box-shadow] duration-150 focus-within:border-focus focus-within:ring-3 focus-within:ring-focus/15 sm:h-10 ${
+            state.error ? "border-danger" : "border-border"
+          }`}
+        >
+          <GitBranch aria-hidden strokeWidth={1.5} className="size-4 shrink-0 text-muted" />
+          <input
+            ref={inputRef}
+            id="repoUrl"
+            name="repoUrl"
+            type="url"
+            inputMode="url"
+            autoComplete="url"
+            spellCheck={false}
+            required
+            defaultValue={state.repoUrl}
+            key={state.repoUrl}
+            placeholder="https://github.com/you/your-app"
+            aria-invalid={state.error ? true : undefined}
+            aria-describedby="repoUrl-help"
+            className="h-full min-w-0 flex-1 bg-transparent pe-3 font-mono text-base outline-none placeholder:text-muted/70 focus-visible:outline-none sm:text-sm"
+          />
+        </div>
         <SubmitButton />
       </div>
-      {state.error ? (
-        <p id="repoUrl-error" className="mt-2 text-sm text-red-600 dark:text-red-400">
-          {state.error}
-        </p>
-      ) : (
-        <p id="repoUrl-hint" className="mt-2 text-sm text-muted">
-          Public repo with an <code className="font-mono">npm run build</code> that outputs to{" "}
-          <code className="font-mono">dist/</code>, <code className="font-mono">build/</code> or{" "}
-          <code className="font-mono">out/</code>.
-        </p>
-      )}
+      <p id="repoUrl-help" className={`mt-2.5 text-sm text-pretty ${state.error ? "text-danger" : "text-muted"}`}>
+        {state.error ?? (
+          <>
+            Any public repo where <Kbd>npm run build</Kbd> outputs to <Kbd>dist</Kbd>, <Kbd>build</Kbd> or <Kbd>out</Kbd>.
+          </>
+        )}
+      </p>
     </form>
   );
 }
