@@ -24,6 +24,20 @@ export function DeployForm() {
     if (state.error) inputRef.current?.focus();
   }, [state]);
 
+  // "/" jumps to the repository field from anywhere on the page, unless the user is already typing.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target as HTMLElement;
+      if (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      e.preventDefault();
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   return (
     <form action={action} noValidate>
       <label htmlFor="repoUrl" className="mb-2 block text-sm font-medium">
@@ -50,8 +64,15 @@ export function DeployForm() {
             placeholder="https://github.com/you/your-app"
             aria-invalid={state.error ? true : undefined}
             aria-describedby="repoUrl-help"
-            className="h-full min-w-0 flex-1 bg-transparent pe-3 font-mono text-base outline-none placeholder:text-muted/70 focus-visible:outline-none sm:text-sm"
+            aria-keyshortcuts="/"
+            className="peer h-full min-w-0 flex-1 bg-transparent pe-3 font-mono text-base outline-none placeholder:text-muted/70 focus-visible:outline-none sm:text-sm"
           />
+          <kbd
+            aria-hidden
+            className="me-2 hidden size-5 shrink-0 items-center justify-center rounded-[5px] bg-surface font-mono text-xs text-muted shadow-card peer-focus:invisible pointer-fine:flex"
+          >
+            /
+          </kbd>
         </div>
         <SubmitButton />
       </div>

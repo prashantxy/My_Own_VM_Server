@@ -33,7 +33,8 @@ export default async function Home(props: PageProps<"/">) {
 
   return (
     <div className="space-y-16">
-      <section aria-labelledby="deploy-heading" className="space-y-8">
+      <section aria-labelledby="deploy-heading" className="relative isolate space-y-8">
+        <div aria-hidden className="hero-grid pointer-events-none absolute inset-x-0 -top-16 -bottom-6 -z-10" />
         <div className="enter space-y-3" style={{ "--i": 0 } as React.CSSProperties}>
           <h1 id="deploy-heading" className="text-[2rem] leading-[1.1] font-semibold tracking-[-0.025em] text-balance sm:text-[2.5rem]">
             Ship a frontend from any Git repo.

@@ -14,6 +14,12 @@ type LiveDeployment = Deployment & { siteUrl: string | null };
 
 const POLL_MS = 3000;
 
+const titlePrefix: Record<Status, string> = {
+  queued: "Building",
+  deployed: "Ready",
+  failed: "Failed",
+};
+
 const announcements: Record<Status, string> = {
   queued: "Build in progress",
   deployed: "Deployment is live",
@@ -56,6 +62,12 @@ export function DeploymentLive({ initial, logsUrl }: { initial: LiveDeployment; 
     prevStatus.current = status;
   }, [status]);
 
+  // Mirror the status in the tab title, so a background tab shows when the build finishes.
+  useEffect(() => {
+    const base = document.title.replace(/^(Building|Ready|Failed) · /, "");
+    document.title = `${titlePrefix[status]} · ${base}`;
+  }, [status]);
+
   const elapsed = building
     ? duration(deployment.createdAt, new Date(now).toISOString())
     : duration(deployment.createdAt, deployment.updatedAt);
@@ -80,6 +92,12 @@ export function DeploymentLive({ initial, logsUrl }: { initial: LiveDeployment; 
           <a href={repoUrl} target="_blank" rel="noreferrer" className={buttonClass("secondary")}>
             <GitBranch aria-hidden strokeWidth={1.5} className="size-4" />
             Source
+          </a>
+        )}
+        {logsUrl && status !== "failed" && (
+          <a href={logsUrl} target="_blank" rel="noreferrer" className={buttonClass("ghost")}>
+            <FileText aria-hidden strokeWidth={1.5} className="size-4" />
+            Logs
           </a>
         )}
       </div>
@@ -216,6 +234,7 @@ function Preview({ deployment, elapsed, logsUrl }: { deployment: LiveDeployment;
           </a>
         ) : status === "queued" ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
+            <div aria-hidden className="progress-indeterminate absolute inset-x-0 top-0 h-0.5 bg-warning/15" />
             <Spinner className="size-5 text-warning" />
             <div>
               <p className="text-sm font-medium">Building</p>

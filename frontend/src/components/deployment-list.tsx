@@ -60,7 +60,10 @@ export function DeploymentList({ items }: { items: (Deployment & { siteUrl: stri
               </Link>
               <p className="truncate font-mono text-[0.8125rem] text-muted">{host ?? d.id}</p>
             </div>
-            <TimeAgo iso={d.createdAt ?? d.updatedAt} className="hidden text-sm text-muted sm:block" />
+            <span aria-hidden className={`hidden w-16 text-sm font-medium sm:block ${statusMeta[d.status].tone}`}>
+              {statusMeta[d.status].label}
+            </span>
+            <TimeAgo iso={d.createdAt ?? d.updatedAt} className="hidden w-16 text-end text-sm text-muted sm:block" />
             {d.status === "deployed" && d.siteUrl ? (
               <a
                 href={d.siteUrl}
