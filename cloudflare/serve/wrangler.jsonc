@@ -1,0 +1,12 @@
+{
+  "name": "vercel-serve",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "r2_buckets": [
+    { "binding": "BUCKET", "bucket_name": "vercel" }
+  ],
+  "routes": [
+    // needs a proxied wildcard DNS record: *  AAAA  100::
+    { "pattern": "*.<your-domain>/*", "zone_name": "<your-domain>" }
+  ]
+}

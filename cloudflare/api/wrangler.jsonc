@@ -1,0 +1,15 @@
+{
+  "name": "vercel-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "kv_namespaces": [
+    // create with: npx wrangler kv namespace create STATUS
+    { "binding": "STATUS", "id": "<KV_NAMESPACE_ID>" }
+  ],
+  "vars": {
+    "GITHUB_REPO": "prashantxy/My_Own_VM_Server",
+    "GITHUB_WORKFLOW": "build.yml",
+    "GITHUB_REF": "main"
+  }
+  // secrets (not in this file): npx wrangler secret put GITHUB_TOKEN / CALLBACK_SECRET
+}
