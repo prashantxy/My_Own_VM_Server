@@ -28,13 +28,26 @@ function generate() {
     return Array.from(bytes, b => subset[b % subset.length]).join("");
 }
 
+interface Deployment {
+    id: string;
+    status: Status;
+    repoUrl?: string;
+    createdAt?: string;
+    updatedAt: string;
+}
+
+// The record is stored as both value and metadata so /deployments can list without extra reads.
 async function setStatus(env: Env, id: string, status: Status, repoUrl?: string) {
-    const prev = await env.STATUS.get<{ repoUrl?: string }>(id, "json");
-    await env.STATUS.put(id, JSON.stringify({
+    const prev = await env.STATUS.get<Deployment>(id, "json");
+    const now = new Date().toISOString();
+    const record: Deployment = {
+        id,
         status,
         repoUrl: repoUrl ?? prev?.repoUrl,
-        updatedAt: new Date().toISOString(),
-    }));
+        createdAt: prev?.createdAt ?? now,
+        updatedAt: now,
+    };
+    await env.STATUS.put(id, JSON.stringify(record), { metadata: record });
 }
 
 async function deploy(request: Request, env: Env) {
@@ -45,7 +58,7 @@ async function deploy(request: Request, env: Env) {
     } catch {
         return json({ error: "repoUrl must be a valid URL" }, 400);
     }
-    if (repoUrl.protocol !== "https:") {
+    if (repoUrl.protocol !== "https:" || repoUrl.href.length > 500) {
         return json({ error: "repoUrl must be an https git URL" }, 400);
     }
 
@@ -76,8 +89,16 @@ async function deploy(request: Request, env: Env) {
 
 async function status(url: URL, env: Env) {
     const id = url.searchParams.get("id") ?? "";
-    const entry = await env.STATUS.get<{ status: Status }>(id, "json");
-    return json({ status: entry?.status ?? null });
+    const entry = await env.STATUS.get<Deployment>(id, "json");
+    return json({ ...entry, status: entry?.status ?? null });
+}
+
+async function deployments(env: Env) {
+    const { keys } = await env.STATUS.list<Deployment>();
+    const items = keys
+        .flatMap(k => (k.metadata ? [k.metadata] : []))
+        .sort((a, b) => (b.createdAt ?? b.updatedAt).localeCompare(a.createdAt ?? a.updatedAt));
+    return json({ deployments: items });
 }
 
 // Called by the GitHub workflow when a build finishes.
@@ -100,6 +121,7 @@ export default {
         if (request.method === "OPTIONS") return new Response(null, { headers: cors });
         if (request.method === "POST" && url.pathname === "/deploy") return deploy(request, env);
         if (request.method === "GET" && url.pathname === "/status") return status(url, env);
+        if (request.method === "GET" && url.pathname === "/deployments") return deployments(env);
         if (request.method === "POST" && url.pathname === "/callback") return callback(request, env);
 
         return json({ error: "not found" }, 404);

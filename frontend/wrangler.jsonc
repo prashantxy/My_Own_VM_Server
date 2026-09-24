@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "vercel-frontend",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    // URL of the API worker (cloudflare/api)
+    "API_URL": "https://vercel-api.<your-subdomain>.workers.dev",
+    // domain the serve worker (cloudflare/serve) answers on: <id>.<SITES_DOMAIN>
+    "SITES_DOMAIN": "<your-domain>"
+  }
+}
