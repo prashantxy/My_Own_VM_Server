@@ -14,6 +14,12 @@ type LiveDeployment = Deployment & { siteUrl: string | null };
 
 const POLL_MS = 3000;
 
+const titlePrefix: Record<Status, string> = {
+  queued: "Building",
+  deployed: "Ready",
+  failed: "Failed",
+};
+
 const announcements: Record<Status, string> = {
   queued: "Build in progress",
   deployed: "Deployment is live",
@@ -56,13 +62,19 @@ export function DeploymentLive({ initial, logsUrl }: { initial: LiveDeployment; 
     prevStatus.current = status;
   }, [status]);
 
+  // Mirror the status in the tab title, so a background tab shows when the build finishes.
+  useEffect(() => {
+    const base = document.title.replace(/^(Building|Ready|Failed) · /, "");
+    document.title = `${titlePrefix[status]} · ${base}`;
+  }, [status]);
+
   const elapsed = building
     ? duration(deployment.createdAt, new Date(now).toISOString())
     : duration(deployment.createdAt, deployment.updatedAt);
   const host = siteUrl?.replace("https://", "");
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <p role="status" className="sr-only">
         {announcement}
       </p>
@@ -82,55 +94,62 @@ export function DeploymentLive({ initial, logsUrl }: { initial: LiveDeployment; 
             Source
           </a>
         )}
+        {logsUrl && status !== "failed" && (
+          <a href={logsUrl} target="_blank" rel="noreferrer" className={buttonClass("ghost")}>
+            <FileText aria-hidden strokeWidth={1.5} className="size-4" />
+            Logs
+          </a>
+        )}
       </div>
 
-      <Preview deployment={deployment} elapsed={elapsed} logsUrl={logsUrl} />
+      <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-12">
+        <Preview deployment={deployment} elapsed={elapsed} logsUrl={logsUrl} />
 
-      <dl
-        className="enter grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4"
-        style={{ "--i": 3 } as React.CSSProperties}
-      >
-        <Detail label="Status">
-          <StatusBadge status={status} />
-        </Detail>
-        <Detail label="Duration">
-          <span suppressHydrationWarning className="tabular-nums">
-            {elapsed || "—"}
-          </span>
-        </Detail>
-        <Detail label="Created">
-          <TimeAgo iso={deployment.createdAt} />
-        </Detail>
-        <Detail label="Source">
-          {repoUrl ? (
-            <a href={repoUrl} target="_blank" rel="noreferrer" className="block truncate underline decoration-border underline-offset-4 hover:decoration-foreground" title={repoUrl}>
-              {repoName(repoUrl)}
-            </a>
-          ) : (
-            "—"
-          )}
-        </Detail>
-        <Detail label="Domain" wide>
-          {host ? (
-            status === "deployed" ? (
-              <a href={siteUrl!} target="_blank" rel="noreferrer" className="block truncate font-mono underline decoration-border underline-offset-4 hover:decoration-foreground">
-                {host}
-              </a>
-            ) : (
-              <span className="block truncate font-mono text-muted">{host}</span>
-            )
-          ) : (
-            <span className="text-muted">Set SITES_DOMAIN to show the site URL</span>
-          )}
-        </Detail>
-      </dl>
+        <aside aria-label="Deployment details" className="enter space-y-8" style={{ "--i": 3 } as React.CSSProperties}>
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4 lg:grid-cols-1">
+            <Detail label="Status">
+              <StatusBadge status={status} />
+            </Detail>
+            <Detail label="Duration">
+              <span suppressHydrationWarning className="tabular-nums">
+                {elapsed || "—"}
+              </span>
+            </Detail>
+            <Detail label="Created">
+              <TimeAgo iso={deployment.createdAt} />
+            </Detail>
+            <Detail label="Source">
+              {repoUrl ? (
+                <a href={repoUrl} target="_blank" rel="noreferrer" className="block truncate underline decoration-border underline-offset-4 hover:decoration-foreground" title={repoUrl}>
+                  {repoName(repoUrl)}
+                </a>
+              ) : (
+                "—"
+              )}
+            </Detail>
+            <Detail label="Domain" wide>
+              {host ? (
+                status === "deployed" ? (
+                  <a href={siteUrl!} target="_blank" rel="noreferrer" className="block truncate font-mono underline decoration-border underline-offset-4 hover:decoration-foreground">
+                    {host}
+                  </a>
+                ) : (
+                  <span className="block truncate font-mono text-muted">{host}</span>
+                )
+              ) : (
+                <span className="text-muted">Set SITES_DOMAIN to show the site URL</span>
+              )}
+            </Detail>
+          </dl>
 
-      <section aria-labelledby="steps-heading" className="enter space-y-4" style={{ "--i": 4 } as React.CSSProperties}>
-        <h2 id="steps-heading" className="text-sm font-medium">
-          Build steps
-        </h2>
-        <Steps status={status} />
-      </section>
+          <section aria-labelledby="steps-heading" className="space-y-4 border-t border-border pt-6">
+            <h2 id="steps-heading" className="text-sm font-medium">
+              Build steps
+            </h2>
+            <Steps status={status} />
+          </section>
+        </aside>
+      </div>
 
       {pollError && (
         <p className="text-sm text-warning">Lost contact with the API. Retrying…</p>
@@ -141,7 +160,7 @@ export function DeploymentLive({ initial, logsUrl }: { initial: LiveDeployment; 
 
 function Detail({ label, wide, children }: { label: string; wide?: boolean; children: React.ReactNode }) {
   return (
-    <div className={`min-w-0 ${wide ? "col-span-2 sm:col-span-4" : ""}`}>
+    <div className={`min-w-0 ${wide ? "col-span-2 sm:col-span-4 lg:col-span-1" : ""}`}>
       <dt className="mb-1 text-[0.8125rem] text-muted">{label}</dt>
       <dd className="min-w-0 text-sm">{children}</dd>
     </div>
@@ -194,9 +213,7 @@ function Preview({ deployment, elapsed, logsUrl }: { deployment: LiveDeployment;
       </div>
 
       <div
-        className={`relative overflow-hidden rounded-[10px] bg-background shadow-card ${
-          status === "deployed" ? "aspect-[16/10]" : "h-64"
-        }`}
+        className="relative aspect-[16/10] min-h-64 overflow-hidden rounded-[10px] bg-background shadow-card"
       >
         {status === "deployed" && siteUrl ? (
           <a href={siteUrl} target="_blank" rel="noreferrer" aria-label={`Open ${host} in a new tab`} className="group absolute inset-0 block rounded-[10px]">
@@ -216,6 +233,7 @@ function Preview({ deployment, elapsed, logsUrl }: { deployment: LiveDeployment;
           </a>
         ) : status === "queued" ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
+            <div aria-hidden className="progress-indeterminate absolute inset-x-0 top-0 h-0.5 bg-warning/15" />
             <Spinner className="size-5 text-warning" />
             <div>
               <p className="text-sm font-medium">Building</p>

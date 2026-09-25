@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 
 export type Status = "queued" | "deployed" | "failed";
 
@@ -21,12 +22,13 @@ export function siteUrl(id: string) {
   return domain ? `https://${id}.${domain}` : null;
 }
 
-export async function listDeployments(): Promise<Deployment[]> {
+// Memoized per request: the landing page reads it from more than one component.
+export const listDeployments = cache(async (): Promise<Deployment[]> => {
   const res = await fetch(apiUrl("/deployments"), { cache: "no-store" });
   if (!res.ok) throw new Error(`API responded ${res.status}`);
   const body = (await res.json()) as { deployments: Deployment[] };
   return body.deployments;
-}
+});
 
 export async function getDeployment(id: string): Promise<Deployment | null> {
   const url = apiUrl("/status");
@@ -46,6 +48,15 @@ export async function createDeployment(repoUrl: string): Promise<{ id: string } 
   const body = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
   if (!res.ok || !body.id) return { error: body.error ?? `API responded ${res.status}` };
   return { id: body.id };
+}
+
+export function sitesDomain() {
+  return process.env.SITES_DOMAIN || null;
+}
+
+export function repoPageUrl() {
+  const repo = process.env.GITHUB_REPO;
+  return repo ? `https://github.com/${repo}` : null;
 }
 
 // Where the build logs live: the workflow's runs page (run names include the deployment id).

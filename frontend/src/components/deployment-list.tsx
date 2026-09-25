@@ -3,7 +3,9 @@ import { ArrowUpRight, Rocket } from "lucide-react";
 import type { Deployment, Status } from "@/lib/api";
 import { repoName } from "@/lib/format";
 import { StatusIcon, statusMeta } from "./status-badge";
+import { DeployLink } from "./site-nav";
 import { TimeAgo } from "./time-ago";
+import { buttonClass } from "./ui";
 
 export type Filter = "all" | Status;
 
@@ -22,7 +24,7 @@ export function FilterTabs({ active, counts }: { active: Filter; counts: Record<
         return (
           <Link
             key={f.key}
-            href={f.key === "all" ? "/" : `/?status=${f.key}`}
+            href={f.key === "all" ? "/deployments" : `/deployments?status=${f.key}`}
             scroll={false}
             aria-current={current ? "page" : undefined}
             className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm whitespace-nowrap transition-[background-color,color,box-shadow] duration-150 ${
@@ -60,7 +62,10 @@ export function DeploymentList({ items }: { items: (Deployment & { siteUrl: stri
               </Link>
               <p className="truncate font-mono text-[0.8125rem] text-muted">{host ?? d.id}</p>
             </div>
-            <TimeAgo iso={d.createdAt ?? d.updatedAt} className="hidden text-sm text-muted sm:block" />
+            <span aria-hidden className={`hidden w-16 text-sm font-medium sm:block ${statusMeta[d.status].tone}`}>
+              {statusMeta[d.status].label}
+            </span>
+            <TimeAgo iso={d.createdAt ?? d.updatedAt} className="hidden w-16 text-end text-sm text-muted sm:block" />
             {d.status === "deployed" && d.siteUrl ? (
               <a
                 href={d.siteUrl}
@@ -89,12 +94,14 @@ export function EmptyState({ filtered }: { filtered: boolean }) {
       </span>
       <p className="font-medium">{filtered ? "Nothing here" : "No deployments yet"}</p>
       <p className="mt-1 max-w-xs text-sm text-pretty text-muted">
-        {filtered ? "No deployments match this filter." : "Paste a repository URL above. Your first deployment will show up here."}
+        {filtered ? "No deployments match this filter." : "Deploy a repository and it will show up here."}
       </p>
-      {filtered && (
-        <Link href="/" scroll={false} className="mt-4 text-sm font-medium underline decoration-border underline-offset-4 hover:decoration-foreground">
+      {filtered ? (
+        <Link href="/deployments" scroll={false} className="mt-4 text-sm font-medium underline decoration-border underline-offset-4 hover:decoration-foreground">
           Show all deployments
         </Link>
+      ) : (
+        <DeployLink className={buttonClass("primary", "mt-5")}>Deploy a repository</DeployLink>
       )}
     </div>
   );

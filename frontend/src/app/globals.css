@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light dark;
   --background: oklch(1 0 0);
   --foreground: oklch(0.205 0 0);
   --muted: oklch(0.52 0 0);
@@ -55,6 +56,7 @@
   --shadow-card-hover: var(--sh-card-hover);
 
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -75,6 +77,15 @@ body {
 }
 
 /* Staged entrance for page content; runs once per navigation, opt-in for motion. */
+html {
+  scroll-padding-top: 4rem;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .enter {
     animation: enter 400ms var(--ease-out-strong) both;
@@ -87,5 +98,101 @@ body {
       transform: translateY(6px);
       filter: blur(2px);
     }
+  }
+}
+
+/* Faint dot grid behind the hero, faded out toward the edges. Decorative only. */
+.hero-grid {
+  background-image: radial-gradient(circle at center, var(--border) 1px, transparent 1.5px);
+  background-size: 20px 20px;
+  mask-image: radial-gradient(ellipse 70% 80% at 50% 30%, black 10%, transparent 70%);
+}
+
+/* Indeterminate progress bar. The element must be positioned (the utility sets that), so the sweep
+   stays inside it. Reduced motion gets a static bar. */
+.progress-indeterminate {
+  overflow: hidden;
+}
+.progress-indeterminate::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: inherit;
+  background: var(--warning);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .progress-indeterminate::after {
+    animation: progress 1.4s var(--ease-in-out-strong) infinite;
+  }
+
+  @keyframes progress {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(250%);
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress-indeterminate::after {
+    width: 100%;
+    opacity: 0.5;
+  }
+}
+
+/* Soft light and texture on the inverted closing card. */
+.cta-glow {
+  background:
+    radial-gradient(60% 90% at 50% 0%, color-mix(in oklch, var(--background) 14%, transparent), transparent 70%),
+    radial-gradient(circle at center, color-mix(in oklch, var(--background) 12%, transparent) 1px, transparent 1.5px) 0 0 / 20px 20px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+
+/* Hero pieces wait for their GSAP intro instead of flashing in first. Only with JS and motion;
+   the failsafe reveals them anyway if the script never runs. */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-intro] {
+    visibility: hidden;
+    animation: intro-failsafe 0s 2.5s forwards;
+  }
+
+  @keyframes intro-failsafe {
+    to {
+      visibility: visible;
+    }
+  }
+}
+
+/* Soft light that trails the cursor (positioned by GSAP). */
+.hero-light {
+  background: radial-gradient(closest-side, color-mix(in oklch, var(--foreground) 7%, transparent), transparent);
+}
+.cta-light {
+  background: radial-gradient(closest-side, color-mix(in oklch, var(--background) 16%, transparent), transparent);
+}
+
+/* Card light under the cursor; --x/--y are set on pointer move. */
+.spotlight {
+  isolation: isolate;
+}
+.spotlight::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    280px circle at var(--x, 50%) var(--y, 0%),
+    color-mix(in oklch, var(--foreground) 6%, transparent),
+    transparent 70%
+  );
+  transition: opacity 200ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .spotlight:hover::before {
+    opacity: 1;
   }
 }

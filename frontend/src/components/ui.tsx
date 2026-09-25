@@ -9,7 +9,14 @@ const variants = {
   primary: "bg-foreground text-background hover:opacity-90",
   secondary: "bg-background text-foreground shadow-card hover:shadow-card-hover hover:bg-surface",
   ghost: "text-muted hover:bg-surface hover:text-foreground",
+  // For use on an inverted (foreground-colored) surface.
+  inverse: "bg-background text-foreground hover:opacity-90",
+  "inverse-outline":
+    "text-background/80 shadow-[0_0_0_1px_color-mix(in_oklch,var(--background)_22%,transparent)] hover:bg-background/10 hover:text-background",
 } as const;
+
+// Shared page width: header, footer and every page line up on the same edges.
+export const container = "mx-auto w-full max-w-5xl px-4 sm:px-6";
 
 export function buttonClass(variant: keyof typeof variants = "secondary", extra = "") {
   return `${base} ${variants[variant]} ${extra}`;

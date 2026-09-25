@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { DeploymentLive } from "@/components/deployment-live";
+import { container } from "@/components/ui";
 import { buildLogsUrl, getDeployment, siteUrl } from "@/lib/api";
 import { repoName } from "@/lib/format";
 
@@ -19,10 +20,10 @@ export default async function DeploymentPage(props: PageProps<"/deployments/[id]
   if (!deployment) notFound();
 
   return (
-    <div className="space-y-6">
+    <div className={`${container} space-y-6 pt-8 pb-20 sm:pt-10`}>
       <div className="enter space-y-5" style={{ "--i": 0 } as React.CSSProperties}>
         <Link
-          href="/#deployments"
+          href="/deployments"
           className="-ms-2 inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm text-muted transition-colors duration-150 hover:text-foreground"
         >
           <ArrowLeft aria-hidden strokeWidth={1.5} className="size-4" />
