@@ -41,7 +41,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   const repo = repoPageUrl();
 
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+      <head>
+        {/* Lets CSS hold hero content for its intro animation only when scripts actually run. */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
+      </head>
       <body className="flex min-h-full flex-col font-sans">
         <a
           href="#main"

@@ -142,43 +142,57 @@ html {
   }
 }
 
-/* Hero build run: lines land one after another, once. Reduced motion shows the finished run. */
-@media (prefers-reduced-motion: no-preference) {
-  .run-line {
-    animation: run-line 320ms var(--ease-out-strong) both;
-    animation-delay: calc(600ms + var(--d, 0) * 380ms);
-  }
-
-  @keyframes run-line {
-    from {
-      opacity: 0;
-      transform: translateY(4px);
-    }
-  }
-}
-
-/* Sections ease in as they scroll into view, where scroll-driven animations are supported. */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .reveal {
-      animation: reveal linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 35%;
-    }
-
-    @keyframes reveal {
-      from {
-        opacity: 0;
-        transform: translateY(12px);
-      }
-    }
-  }
-}
-
 /* Soft light and texture on the inverted closing card. */
 .cta-glow {
   background:
     radial-gradient(60% 90% at 50% 0%, color-mix(in oklch, var(--background) 14%, transparent), transparent 70%),
     radial-gradient(circle at center, color-mix(in oklch, var(--background) 12%, transparent) 1px, transparent 1.5px) 0 0 / 20px 20px;
   mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+
+/* Hero pieces wait for their GSAP intro instead of flashing in first. Only with JS and motion;
+   the failsafe reveals them anyway if the script never runs. */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-intro] {
+    visibility: hidden;
+    animation: intro-failsafe 0s 2.5s forwards;
+  }
+
+  @keyframes intro-failsafe {
+    to {
+      visibility: visible;
+    }
+  }
+}
+
+/* Soft light that trails the cursor (positioned by GSAP). */
+.hero-light {
+  background: radial-gradient(closest-side, color-mix(in oklch, var(--foreground) 7%, transparent), transparent);
+}
+.cta-light {
+  background: radial-gradient(closest-side, color-mix(in oklch, var(--background) 16%, transparent), transparent);
+}
+
+/* Card light under the cursor; --x/--y are set on pointer move. */
+.spotlight {
+  isolation: isolate;
+}
+.spotlight::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    280px circle at var(--x, 50%) var(--y, 0%),
+    color-mix(in oklch, var(--foreground) 6%, transparent),
+    transparent 70%
+  );
+  transition: opacity 200ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .spotlight:hover::before {
+    opacity: 1;
+  }
 }
