@@ -77,6 +77,15 @@ body {
 }
 
 /* Staged entrance for page content; runs once per navigation, opt-in for motion. */
+html {
+  scroll-padding-top: 4rem;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .enter {
     animation: enter 400ms var(--ease-out-strong) both;
@@ -96,12 +105,12 @@ body {
 .hero-grid {
   background-image: radial-gradient(circle at center, var(--border) 1px, transparent 1.5px);
   background-size: 20px 20px;
-  mask-image: radial-gradient(ellipse 60% 70% at 30% 40%, black 20%, transparent 75%);
+  mask-image: radial-gradient(ellipse 70% 80% at 50% 30%, black 10%, transparent 70%);
 }
 
-/* Indeterminate progress: constant motion, so linear. Reduced motion gets a static bar. */
+/* Indeterminate progress bar. The element must be positioned (the utility sets that), so the sweep
+   stays inside it. Reduced motion gets a static bar. */
 .progress-indeterminate {
-  position: relative;
   overflow: hidden;
 }
 .progress-indeterminate::after {
@@ -131,4 +140,45 @@ body {
     width: 100%;
     opacity: 0.5;
   }
+}
+
+/* Hero build run: lines land one after another, once. Reduced motion shows the finished run. */
+@media (prefers-reduced-motion: no-preference) {
+  .run-line {
+    animation: run-line 320ms var(--ease-out-strong) both;
+    animation-delay: calc(600ms + var(--d, 0) * 380ms);
+  }
+
+  @keyframes run-line {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+}
+
+/* Sections ease in as they scroll into view, where scroll-driven animations are supported. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+
+    @keyframes reveal {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+    }
+  }
+}
+
+/* Soft light and texture on the inverted closing card. */
+.cta-glow {
+  background:
+    radial-gradient(60% 90% at 50% 0%, color-mix(in oklch, var(--background) 14%, transparent), transparent 70%),
+    radial-gradient(circle at center, color-mix(in oklch, var(--background) 12%, transparent) 1px, transparent 1.5px) 0 0 / 20px 20px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
 }

@@ -24,6 +24,11 @@ export function DeployForm() {
     if (state.error) inputRef.current?.focus();
   }, [state]);
 
+  // Arriving via /#deploy from another page lands with the field ready to type in.
+  useEffect(() => {
+    if (window.location.hash === "#deploy") inputRef.current?.focus();
+  }, []);
+
   // "/" jumps to the repository field from anywhere on the page, unless the user is already typing.
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {

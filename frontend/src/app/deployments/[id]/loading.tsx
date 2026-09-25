@@ -1,6 +1,8 @@
+import { container } from "@/components/ui";
+
 export default function Loading() {
   return (
-    <div className="space-y-6" aria-busy="true" aria-label="Loading deployment">
+    <div className={`${container} space-y-6 pt-8 pb-20 sm:pt-10`} aria-busy="true" aria-label="Loading deployment">
       <div className="space-y-5">
         <div className="h-8 w-28 rounded-lg bg-surface" />
         <div className="space-y-2">
@@ -12,7 +14,14 @@ export default function Loading() {
         <div className="h-9 w-20 rounded-lg bg-surface" />
         <div className="h-9 w-24 rounded-lg bg-surface" />
       </div>
-      <div className="aspect-[16/10] rounded-2xl bg-surface shadow-card motion-safe:animate-pulse" />
+      <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-12">
+        <div className="aspect-[16/10] rounded-2xl bg-surface shadow-card motion-safe:animate-pulse" />
+        <div className="hidden space-y-5 lg:block">
+          <div className="h-10 rounded bg-surface" />
+          <div className="h-10 rounded bg-surface" />
+          <div className="h-10 rounded bg-surface" />
+        </div>
+      </div>
     </div>
   );
 }
