@@ -14,6 +14,7 @@ import { FINE_POINTER, gsap, MOTION_OK, ScrollTrigger, SplitText, useGSAP } from
  *   data-spotlight   cards with a soft light under the cursor
  *   data-follow      a light that trails the cursor inside its parent
  *   data-magnetic    buttons that lean toward the cursor
+ *   data-stack="…"   a list whose cards stack like a deck while the query (a single-column layout) matches
  * Everything sits behind reduced-motion (and pointer) media queries; the markup is the final state.
  */
 export function LandingMotion({ children }: { children: React.ReactNode }) {
@@ -77,7 +78,7 @@ export function LandingMotion({ children }: { children: React.ReactNode }) {
         ScrollTrigger.batch(reveals, {
           start: "top 88%",
           once: true,
-          onEnter: batch => gsap.to(batch, { autoAlpha: 1, y: 0, stagger: 0.08, duration: 0.8, ease: "ui-out", overwrite: true }),
+          onEnter: batch => gsap.to(batch, { autoAlpha: 1, y: 0, stagger: 0.08, duration: 0.8, ease: "ui-out", overwrite: "auto" }),
         });
 
         // Numbers count up.
@@ -92,6 +93,44 @@ export function LandingMotion({ children }: { children: React.ReactNode }) {
             scrollTrigger: { trigger: el, start: "top 90%", once: true },
           });
           el.textContent = "0";
+        });
+      });
+
+      // Card stacks: while a list is a single column, each card sticks under the header a little lower
+      // than the one before, and the cards underneath shrink and fade back as the rest arrive.
+      q<HTMLElement>("[data-stack]").forEach(list => {
+        mm.add(`${list.dataset.stack} and ${MOTION_OK}`, () => {
+          const cards = gsap.utils.toArray<HTMLElement>(list.children);
+          const last = cards[cards.length - 1];
+          const topFor = (i: number) => 72 + i * 12; // 56px header + 16px, then a 12px peek per card
+          const shades: HTMLElement[] = [];
+
+          gsap.set(list.querySelectorAll("[data-stack-hide]"), { display: "none" });
+          cards.forEach((card, i) => {
+            gsap.set(card, { position: "sticky", top: topFor(i), zIndex: i + 1, transformOrigin: "50% 0%" });
+
+            if (card === last) return;
+            const depth = cards.length - 1 - i;
+            const shade = document.createElement("span");
+            shade.setAttribute("aria-hidden", "");
+            shade.className = "pointer-events-none absolute inset-0 rounded-[inherit] bg-background opacity-0";
+            card.append(shade);
+            shades.push(shade);
+
+            // From the moment the next card starts to arrive until the last one settles.
+            const tl = gsap.timeline({
+              scrollTrigger: {
+                trigger: cards[i + 1],
+                start: "top bottom",
+                endTrigger: last,
+                end: `top ${topFor(cards.length - 1)}px`,
+                scrub: true,
+              },
+            });
+            tl.to(card, { scale: 1 - depth * 0.04, ease: "none" }, 0).to(shade, { opacity: Math.min(0.2 + depth * 0.12, 0.6), ease: "none" }, 0);
+          });
+
+          return () => shades.forEach(el => el.remove());
         });
       });
 

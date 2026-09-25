@@ -140,7 +140,7 @@ export function Architecture() {
             ))}
           </div>
 
-          <ol className="grid gap-6 lg:grid-cols-5">
+          <ol data-stack="(max-width: 1023px)" className="grid gap-6 lg:grid-cols-5">
             {nodes.map(({ Icon, name, tech, detail }, i) => (
               <li
                 key={name}
@@ -158,6 +158,7 @@ export function Architecture() {
                 {i < nodes.length - 1 && (
                   <ArrowDown
                     aria-hidden
+                    data-stack-hide
                     strokeWidth={1.5}
                     className="absolute start-1/2 -bottom-5 size-4 -translate-x-1/2 text-muted lg:start-auto lg:-end-5 lg:top-1/2 lg:bottom-auto lg:translate-x-0 lg:-translate-y-1/2 lg:-rotate-90"
                   />

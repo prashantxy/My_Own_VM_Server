@@ -131,9 +131,9 @@ export default function Home() {
           <SectionHeader id="how-heading" eyebrow="How it works" title="From repository to URL in three steps.">
             You paste one link. Everything after that runs on infrastructure you already have.
           </SectionHeader>
-          <ol className="grid gap-4 md:grid-cols-3">
+          <ol data-stack="(max-width: 767px)" className="grid gap-4 md:grid-cols-3">
             {steps.map((step, i) => (
-              <li key={step.title} data-reveal className="flex flex-col rounded-xl bg-background p-5 shadow-card">
+              <li key={step.title} data-reveal className="relative flex flex-col rounded-xl bg-background p-5 shadow-card">
                 <span data-scramble className="font-mono text-xs text-muted tabular-nums">
                   0{i + 1}
                 </span>
@@ -166,7 +166,7 @@ export default function Home() {
       <section aria-labelledby="features-heading" className="border-t border-border">
         <div className={`${container} space-y-10 py-20 sm:py-28`}>
           <SectionHeader id="features-heading" eyebrow="Details" title="The parts you’d otherwise build yourself." />
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul data-stack="(max-width: 767px)" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {features.map(({ Icon, title, body }) => (
               <li
                 key={title}
