@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { ArrowUpRight, Check, LoaderCircle } from "lucide-react";
 import { gsap, MOTION_OK, ScrollTrigger, useGSAP } from "@/lib/gsap";
+import { WindowBar } from "../ui";
 
 // Illustrative build runs for the hero. Decorative: the real flow is described in text on the page.
 // The server markup is the finished first run, which is also what reduced motion and no-JS show.
@@ -121,72 +122,66 @@ export function DeployRun({ domain }: { domain: string }) {
   const first = runs[0];
 
   return (
-    <div ref={root} aria-hidden className="rounded-2xl bg-surface p-1.5 shadow-card select-none">
-      <div className="flex h-8 items-center gap-3 px-2.5">
-        <span className="flex gap-1.5">
-          <span className="size-2 rounded-full bg-border" />
-          <span className="size-2 rounded-full bg-border" />
-          <span className="size-2 rounded-full bg-border" />
-        </span>
-        <span className="min-w-0 flex-1 truncate text-center font-mono text-xs text-muted">deployer — build</span>
-        <span className="w-[2.625rem]" />
-      </div>
+    <div ref={root} aria-hidden className="overflow-hidden rounded-[14px] bg-canvas text-start shadow-window select-none">
+      <WindowBar title="Deployer — build" className="border-b border-separator" />
 
-      <div className="relative overflow-hidden rounded-[10px] bg-background p-4 font-mono text-[0.8125rem] leading-7 shadow-card sm:p-5">
+      <div className="relative bg-elevated p-5 font-mono text-footnote leading-8 sm:p-7 sm:text-callout">
         <span className="absolute inset-x-0 top-0 h-0.5">
-          <span data-bar className="invisible absolute inset-0 origin-left bg-warning">
-            <span data-bar-done className="invisible absolute inset-0 bg-success" />
+          <span data-bar className="invisible absolute inset-0 origin-left bg-dot-warning">
+            <span data-bar-done className="invisible absolute inset-0 bg-dot-success" />
           </span>
         </span>
 
-        <div className="mb-3 flex items-center gap-2 border-b border-border pb-3">
-          <span className="text-muted">$</span>
+        <div className="mb-4 flex items-center gap-2 border-b border-separator pb-4">
+          <span className="text-accent">❯</span>
           <span>deploy</span>
           <span className="flex min-w-0 items-center">
             <span data-repo className="truncate text-muted">
               {first.repo}
             </span>
-            <span data-caret className="ms-0.5 h-4 w-[7px] shrink-0 bg-foreground/60" />
+            <span data-caret className="ms-0.5 h-[1.1em] w-[2px] shrink-0 rounded-full bg-accent" />
           </span>
         </div>
 
         <ol>
           {steps.map((line, i) => (
-            <li key={line.step} data-row className="grid grid-cols-[1rem_4.25rem_minmax(0,1fr)_auto] items-center gap-x-3">
-              <span className="relative size-3.5">
-                <span data-pending className="invisible absolute inset-0 m-auto size-2.5 rounded-full shadow-[inset_0_0_0_1.5px_var(--border)]" />
+            <li key={line.step} data-row className="grid grid-cols-[1.25rem_4.75rem_minmax(0,1fr)_auto] items-center gap-x-3">
+              <span className="relative size-4">
+                <span data-pending className="invisible absolute inset-0 m-auto size-3 rounded-full shadow-[inset_0_0_0_1.5px_var(--border)]" />
                 <span data-spin className="invisible absolute inset-0">
-                  <LoaderCircle strokeWidth={2.5} className="size-3.5 animate-spin text-warning" />
+                  <LoaderCircle strokeWidth={2.5} className="size-4 animate-spin text-dot-warning" />
                 </span>
-                <Check data-check strokeWidth={2.5} className="absolute inset-0 size-3.5 text-success" />
+                <span data-check className="absolute inset-0 flex items-center justify-center rounded-full bg-dot-success text-white">
+                  <Check strokeWidth={3.5} className="size-2.5" />
+                </span>
               </span>
-              <span>{line.step}</span>
+              <span className="font-sans font-medium">{line.step}</span>
               <span className="truncate text-muted">{line.cmd}</span>
-              <span data-time className="min-w-[2.75rem] text-end text-muted tabular-nums">
+              <span data-time className="min-w-[3rem] text-end text-muted tabular-nums">
                 {first.times[i]}s
               </span>
             </li>
           ))}
         </ol>
 
-        <div data-live className="mt-3 flex items-center gap-3 border-t border-border pt-3">
-          <span className="relative flex size-3.5 items-center justify-center">
-            <span className="absolute size-2 rounded-full bg-success/40 motion-safe:animate-ping" />
-            <span className="size-2 rounded-full bg-success" />
+        <div data-live className="mt-4 flex items-center gap-3 border-t border-separator pt-4">
+          <span className="relative flex size-4 items-center justify-center">
+            <span className="absolute size-2.5 rounded-full bg-dot-success/40 motion-safe:animate-ping" />
+            <span className="size-2.5 rounded-full bg-dot-success" />
           </span>
-          <span className="w-[4.25rem]">Live</span>
-          <span className="flex min-w-0 items-center gap-1 text-foreground">
-            <span data-host className="truncate underline decoration-border underline-offset-4">
+          <span className="w-[4.75rem] font-sans font-medium">Live</span>
+          <span className="flex min-w-0 items-center gap-1 text-accent">
+            <span data-host className="truncate">
               {first.id}.{domain}
             </span>
-            <ArrowUpRight strokeWidth={2} className="size-3.5 shrink-0 text-muted" />
+            <ArrowUpRight strokeWidth={2} className="size-3.5 shrink-0" />
           </span>
         </div>
       </div>
 
-      <div data-footer className="flex h-9 items-center justify-between px-2.5 text-xs">
+      <div data-footer className="flex h-10 items-center justify-between border-t border-separator px-4 text-footnote">
         <span className="inline-flex items-center gap-1.5 font-medium text-success">
-          <span className="size-1.5 rounded-full bg-success" />
+          <span className="size-2 rounded-full bg-dot-success" />
           Ready
         </span>
         <span data-total className="font-mono text-muted tabular-nums">

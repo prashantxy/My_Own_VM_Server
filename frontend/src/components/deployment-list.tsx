@@ -1,84 +1,60 @@
 import Link from "next/link";
-import { ArrowUpRight, Rocket } from "lucide-react";
-import type { Deployment, Status } from "@/lib/api";
+import { ArrowUpRight, ChevronRight, Rocket } from "lucide-react";
+import type { Deployment } from "@/lib/api";
 import { repoName } from "@/lib/format";
 import { StatusIcon, statusMeta } from "./status-badge";
 import { DeployLink } from "./site-nav";
 import { TimeAgo } from "./time-ago";
-import { buttonClass } from "./ui";
+import { buttonClass, groupedList, groupedRow } from "./ui";
 
-export type Filter = "all" | Status;
+export { FilterTabs, type Filter } from "./filter-tabs";
 
-const filters: { key: Filter; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "deployed", label: "Ready" },
-  { key: "queued", label: "Building" },
-  { key: "failed", label: "Error" },
-];
-
-export function FilterTabs({ active, counts }: { active: Filter; counts: Record<Filter, number> }) {
-  return (
-    <nav aria-label="Filter deployments" className="flex gap-1 overflow-x-auto rounded-[10px] bg-surface p-0.5 shadow-card">
-      {filters.map(f => {
-        const current = f.key === active;
-        return (
-          <Link
-            key={f.key}
-            href={f.key === "all" ? "/deployments" : `/deployments?status=${f.key}`}
-            scroll={false}
-            aria-current={current ? "page" : undefined}
-            className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm whitespace-nowrap transition-[background-color,color,box-shadow] duration-150 ${
-              current ? "bg-background font-medium text-foreground shadow-card" : "text-muted hover:text-foreground"
-            }`}
-          >
-            {f.label}
-            <span className="text-xs text-muted tabular-nums">{counts[f.key]}</span>
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
-
+// Inset grouped list: one surface, hairlines that start at the text, a chevron that says "opens".
 export function DeploymentList({ items }: { items: (Deployment & { siteUrl: string | null })[] }) {
   return (
-    <ul className="overflow-hidden rounded-xl bg-background shadow-card">
+    <ul className={groupedList}>
       {items.map((d, i) => {
         const host = d.siteUrl?.replace("https://", "");
         return (
           <li
             key={d.id}
             style={{ "--i": Math.min(i, 8) } as React.CSSProperties}
-            className="enter group relative flex items-center gap-3 border-b border-border px-4 py-3.5 transition-colors duration-150 last:border-b-0 hover:bg-surface"
+            className={`enter group flex min-h-16 items-center gap-3.5 ps-4 pe-2 transition-colors duration-150 hover:bg-fill/50 active:bg-fill ${groupedRow("before:start-[3.75rem]")}`}
           >
-            <StatusIcon status={d.status} />
-            <div className="min-w-0 flex-1">
+            <StatusIcon status={d.status} tile />
+            <div className="min-w-0 flex-1 py-3">
               <Link
                 href={`/deployments/${d.id}`}
-                className="block truncate font-medium outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:rounded-xl focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-focus"
+                className="block truncate text-body font-medium outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-focus"
               >
                 {repoName(d.repoUrl)}
                 <span className="sr-only">, {statusMeta[d.status].label}</span>
               </Link>
-              <p className="truncate font-mono text-[0.8125rem] text-muted">{host ?? d.id}</p>
+              <p className="truncate text-footnote text-muted">
+                <span aria-hidden className={`font-medium sm:hidden ${statusMeta[d.status].tone}`}>
+                  {statusMeta[d.status].label} ·{" "}
+                </span>
+                <span className="font-mono">{host ?? d.id}</span>
+              </p>
             </div>
-            <span aria-hidden className={`hidden w-16 text-sm font-medium sm:block ${statusMeta[d.status].tone}`}>
+            <span aria-hidden className={`hidden w-20 text-footnote font-medium sm:block ${statusMeta[d.status].tone}`}>
               {statusMeta[d.status].label}
             </span>
-            <TimeAgo iso={d.createdAt ?? d.updatedAt} className="hidden w-16 text-end text-sm text-muted sm:block" />
+            <TimeAgo iso={d.createdAt ?? d.updatedAt} className="hidden w-16 text-end text-footnote text-muted sm:block" />
             {d.status === "deployed" && d.siteUrl ? (
               <a
                 href={d.siteUrl}
                 target="_blank"
                 rel="noreferrer"
                 aria-label={`Open ${host} in a new tab`}
-                className="relative z-10 -me-1.5 inline-flex size-9 items-center justify-center rounded-lg text-muted transition-[background-color,color] duration-150 hover:bg-background hover:text-foreground"
+                className="relative z-10 inline-flex size-9 items-center justify-center rounded-full text-accent transition-[background-color,scale] duration-200 ease-spring-snappy hover:bg-fill active:scale-[0.92]"
               >
-                <ArrowUpRight aria-hidden strokeWidth={1.5} className="size-4" />
+                <ArrowUpRight aria-hidden strokeWidth={2} className="size-[18px]" />
               </a>
             ) : (
-              <span className="-me-1.5 size-9" aria-hidden />
+              <span className="size-9" aria-hidden />
             )}
+            <ChevronRight aria-hidden strokeWidth={2.25} className="-ms-1 size-4 shrink-0 text-faint" />
           </li>
         );
       })}
@@ -88,20 +64,20 @@ export function DeploymentList({ items }: { items: (Deployment & { siteUrl: stri
 
 export function EmptyState({ filtered }: { filtered: boolean }) {
   return (
-    <div className="flex flex-col items-center rounded-xl bg-surface px-6 py-14 text-center shadow-card">
-      <span className="mb-4 flex size-10 items-center justify-center rounded-[10px] bg-background shadow-card">
-        <Rocket aria-hidden strokeWidth={1.5} className="size-5 text-muted" />
+    <div className="flex flex-col items-center rounded-[22px] bg-elevated px-6 py-16 text-center shadow-card">
+      <span className="mb-5 flex size-14 items-center justify-center rounded-[16px] bg-accent text-white">
+        <Rocket aria-hidden strokeWidth={2} className="size-7" />
       </span>
-      <p className="font-medium">{filtered ? "Nothing here" : "No deployments yet"}</p>
-      <p className="mt-1 max-w-xs text-sm text-pretty text-muted">
+      <p className="text-title">{filtered ? "Nothing here" : "No deployments yet"}</p>
+      <p className="mt-1.5 max-w-xs text-callout text-pretty text-muted">
         {filtered ? "No deployments match this filter." : "Deploy a repository and it will show up here."}
       </p>
       {filtered ? (
-        <Link href="/deployments" scroll={false} className="mt-4 text-sm font-medium underline decoration-border underline-offset-4 hover:decoration-foreground">
+        <Link href="/deployments" scroll={false} className={buttonClass("ghost", "mt-5")}>
           Show all deployments
         </Link>
       ) : (
-        <DeployLink className={buttonClass("primary", "mt-5")}>Deploy a repository</DeployLink>
+        <DeployLink className={buttonClass("primary", "mt-6 h-11 px-5 text-body")}>Deploy a repository</DeployLink>
       )}
     </div>
   );

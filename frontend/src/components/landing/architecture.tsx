@@ -3,8 +3,7 @@
 import { useRef } from "react";
 import { ArrowDown, CornerDownLeft, Database, Globe, LayoutDashboard, Server, Workflow } from "lucide-react";
 import { DESKTOP_MOTION, gsap, MOTION_OK, ScrollTrigger, useGSAP } from "@/lib/gsap";
-import { container } from "../ui";
-import { SectionHeader } from "./section-header";
+import { container, SectionHeading } from "../ui";
 
 const nodes = [
   {
@@ -115,14 +114,14 @@ export function Architecture() {
       ref={root}
       id="architecture"
       aria-labelledby="architecture-heading"
-      className="scroll-mt-14 border-t border-border bg-surface lg:flex lg:min-h-svh lg:flex-col lg:justify-center"
+      className="scroll-mt-12 bg-background lg:flex lg:min-h-svh lg:flex-col lg:justify-center"
     >
-      <div className={`${container} space-y-10 py-20 sm:py-28`}>
+      <div className={`${container} space-y-12 py-24 sm:py-32`}>
         <div className="flex flex-wrap items-end justify-between gap-6">
-          <SectionHeader id="architecture-heading" eyebrow="Architecture" title="Five small pieces, all serverless.">
+          <SectionHeading id="architecture-heading" eyebrow="Architecture" title="Five small pieces." quiet="All serverless.">
             Workers handle requests, KV keeps status, GitHub Actions does the heavy lifting and R2 holds the files.
-          </SectionHeader>
-          <p aria-hidden className="hidden font-mono text-xs text-muted tabular-nums lg:block">
+          </SectionHeading>
+          <p aria-hidden className="hidden rounded-full bg-fill px-3 py-1 text-footnote font-medium text-muted tabular-nums lg:block">
             Step <span data-step-count>5</span> / {nodes.length}
           </p>
         </div>
@@ -130,12 +129,12 @@ export function Architecture() {
         <figure className="space-y-6">
           {/* Progress rail, desktop only. Dots line up with the card columns below. */}
           <div aria-hidden className="relative hidden grid-cols-5 lg:grid">
-            <span className="absolute inset-x-[10%] top-1/2 h-px -translate-y-1/2 bg-border" />
-            <span data-fill className="absolute start-[10%] top-1/2 h-px w-[80%] origin-left -translate-y-1/2 bg-foreground" />
+            <span className="absolute inset-x-[10%] top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-fill-strong" />
+            <span data-fill className="absolute start-[10%] top-1/2 h-0.5 w-[80%] origin-left -translate-y-1/2 rounded-full bg-accent" />
             {nodes.map(n => (
               <span key={n.name} className="relative flex justify-center">
-                <span className="size-2.5 rounded-full bg-border" />
-                <span data-dot className="absolute size-2.5 rounded-full bg-foreground shadow-[0_0_0_4px_color-mix(in_oklch,var(--foreground)_12%,transparent)]" />
+                <span className="size-3 rounded-full bg-fill-strong" />
+                <span data-dot className="absolute size-3 rounded-full bg-accent shadow-[0_0_0_5px_color-mix(in_srgb,var(--accent)_18%,transparent)]" />
               </span>
             ))}
           </div>
@@ -145,22 +144,22 @@ export function Architecture() {
               <li
                 key={name}
                 data-node
-                className="relative flex items-start gap-3 rounded-xl bg-background p-4 shadow-card lg:flex-col lg:gap-4"
+                className="relative flex items-start gap-4 rounded-[22px] bg-canvas p-5 lg:flex-col lg:gap-5"
               >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface shadow-card">
-                  <Icon aria-hidden strokeWidth={1.5} className="size-4" />
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-[11px] bg-accent text-white">
+                  <Icon aria-hidden strokeWidth={2} className="size-5" />
                 </span>
                 <div className="min-w-0 space-y-0.5">
-                  <p className="text-sm font-medium">{name}</p>
-                  <p className="font-mono text-xs text-muted">{tech}</p>
-                  <p className="pt-1 text-[0.8125rem] leading-snug text-pretty text-muted">{detail}</p>
+                  <p className="text-callout font-semibold">{name}</p>
+                  <p className="text-footnote text-accent">{tech}</p>
+                  <p className="pt-1.5 text-footnote text-pretty text-muted">{detail}</p>
                 </div>
                 {i < nodes.length - 1 && (
                   <ArrowDown
                     aria-hidden
                     data-stack-hide
-                    strokeWidth={1.5}
-                    className="absolute start-1/2 -bottom-5 size-4 -translate-x-1/2 text-muted lg:start-auto lg:-end-5 lg:top-1/2 lg:bottom-auto lg:translate-x-0 lg:-translate-y-1/2 lg:-rotate-90"
+                    strokeWidth={2}
+                    className="absolute start-1/2 -bottom-5 size-4 -translate-x-1/2 text-faint lg:start-auto lg:-end-5 lg:top-1/2 lg:bottom-auto lg:translate-x-0 lg:-translate-y-1/2 lg:-rotate-90"
                   />
                 )}
               </li>
@@ -168,10 +167,10 @@ export function Architecture() {
           </ol>
 
           {/* Step captions share one cell; only the scroll sequence shows the first five. */}
-          <div className="grid text-[0.8125rem] text-pretty text-muted lg:min-h-10 lg:text-sm [&>*]:[grid-area:1/1]">
+          <div className="grid text-footnote text-pretty text-muted lg:min-h-12 lg:text-callout [&>*]:[grid-area:1/1]">
             {nodes.map(n => (
               <p key={n.name} data-caption aria-hidden className="invisible hidden lg:block">
-                <span className="font-medium text-foreground">{n.name}.</span> {n.caption}
+                <span className="font-semibold text-foreground">{n.name}.</span> {n.caption}
               </p>
             ))}
             <figcaption data-caption className="flex items-start gap-2">

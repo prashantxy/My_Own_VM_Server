@@ -33,14 +33,14 @@ export default async function DeploymentsPage(props: PageProps<"/deployments">) 
     .map(d => ({ ...d, siteUrl: siteUrl(d.id) }));
 
   return (
-    <div className={`${container} space-y-8 pt-10 pb-20 sm:pt-14`}>
+    <div className={`${container} space-y-8 pt-10 pb-24 sm:pt-16`}>
       <div className="enter flex flex-wrap items-end justify-between gap-4" style={{ "--i": 0 } as React.CSSProperties}>
-        <div className="space-y-1">
-          <h1 className="text-[1.75rem] leading-[1.15] font-semibold tracking-[-0.02em] sm:text-[2rem]">Deployments</h1>
-          <p className="text-muted">Every build, newest first.</p>
+        <div className="space-y-1.5">
+          <h1 className="text-large-title">Deployments</h1>
+          <p className="text-lede text-muted">Every build, newest first.</p>
         </div>
-        <DeployLink className={buttonClass("primary", "ps-3 pe-3.5")}>
-          <Plus aria-hidden strokeWidth={2} className="size-4" />
+        <DeployLink className={buttonClass("primary", "ps-3.5 pe-4")}>
+          <Plus aria-hidden strokeWidth={2.5} className="size-4" />
           New deployment
         </DeployLink>
       </div>
@@ -49,10 +49,12 @@ export default async function DeploymentsPage(props: PageProps<"/deployments">) 
         {deployments && deployments.length > 0 && <FilterTabs active={filter} counts={counts} />}
 
         {deployments === null ? (
-          <div role="alert" className="flex items-start gap-3 rounded-xl bg-surface p-4 text-sm shadow-card">
-            <TriangleAlert aria-hidden strokeWidth={1.5} className="mt-0.5 size-4 shrink-0 text-danger" />
-            <div>
-              <p className="font-medium">Unable to load deployments</p>
+          <div role="alert" className="flex items-start gap-3.5 rounded-[22px] bg-elevated p-5 text-callout shadow-card">
+            <span className="flex size-[30px] shrink-0 items-center justify-center rounded-[8px] bg-dot-warning text-white">
+              <TriangleAlert aria-hidden strokeWidth={2.25} className="size-4" />
+            </span>
+            <div className="space-y-0.5">
+              <p className="font-semibold">Unable to load deployments</p>
               <p className="text-pretty text-muted">
                 Check that <code className="font-mono">API_URL</code> points at the API worker, then reload the page.
               </p>

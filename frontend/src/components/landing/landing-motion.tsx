@@ -6,9 +6,9 @@ import { FINE_POINTER, gsap, MOTION_OK, ScrollTrigger, SplitText, useGSAP } from
 /*
  * Scroll and pointer choreography for the landing page, driven by data attributes so the
  * server-rendered markup stays plain:
- *   data-intro="…"   hero pieces, played once on load in document order
+ *   data-intro="…"   hero pieces, played once on load (data-line: title lines inside a mask)
+ *   data-tilt        a visual that leans back and flattens as it scrolls into view
  *   data-split       headings that rise in line by line
- *   data-scramble    small labels that decode on entry
  *   data-reveal      blocks that fade up, batched so neighbours stagger
  *   data-count       numbers that count up to their text content
  *   data-spotlight   cards with a soft light under the cursor
@@ -26,25 +26,32 @@ export function LandingMotion({ children }: { children: React.ReactNode }) {
       const mm = gsap.matchMedia();
 
       mm.add(MOTION_OK, () => {
-        // Hero intro.
-        const [h1] = q<HTMLElement>("h1[data-intro]");
+        // Hero intro: the two title lines rise out of their masks, everything else settles in behind.
         const intro = gsap.timeline({ defaults: { ease: "ui-out" } });
-        intro.from(q('[data-intro="pill"]'), { autoAlpha: 0, y: 8, duration: 0.6 });
-        if (h1) {
-          const split = SplitText.create(h1, { type: "lines,words", mask: "lines" });
-          intro
-            .set(h1, { autoAlpha: 1 })
-            .from(split.words, { yPercent: 110, duration: 1, stagger: 0.06, onComplete: () => split.revert() }, 0.1);
-        }
         intro
-          .from(q('[data-intro="copy"]'), { autoAlpha: 0, y: 12, filter: "blur(4px)", duration: 0.8 }, 0.45)
-          .from(q('[data-intro="form"]'), { autoAlpha: 0, y: 20, scale: 0.98, duration: 0.9 }, 0.6)
-          .from(
-            q('[data-intro="visual"]'),
-            { autoAlpha: 0, y: 40, rotationX: 14, transformPerspective: 1400, transformOrigin: "50% 100%", duration: 1.2 },
-            0.5,
-          )
-          .from(q('[data-intro="strip"]'), { autoAlpha: 0, duration: 0.8 }, 0.9);
+          .from(q('[data-intro="pill"]'), { autoAlpha: 0, y: 8, scale: 0.96, duration: 0.7 })
+          .set(q('[data-intro="title"]'), { autoAlpha: 1 }, 0.05)
+          .from(q("[data-line]"), { yPercent: 105, duration: 1.1, stagger: 0.1 }, 0.05)
+          .from(q('[data-intro="copy"]'), { autoAlpha: 0, y: 12, filter: "blur(6px)", duration: 0.9 }, 0.4)
+          .from(q('[data-intro="form"]'), { autoAlpha: 0, y: 24, scale: 0.97, filter: "blur(8px)", duration: 1 }, 0.55)
+          .from(q('[data-intro="links"]'), { autoAlpha: 0, y: 8, duration: 0.8 }, 0.75)
+          .from(q('[data-intro="visual"]'), { autoAlpha: 0, y: 60, duration: 1.3 }, 0.7)
+          .from(q('[data-intro="strip"]'), { autoAlpha: 0, duration: 0.8 }, 1);
+
+        // The build window leans back and flattens as it scrolls toward the middle of the screen,
+        // the way a product shot settles into view.
+        q<HTMLElement>("[data-tilt]").forEach(el => {
+          gsap.fromTo(
+            el,
+            { rotationX: 18, scale: 0.92, y: 0 },
+            {
+              rotationX: 0,
+              scale: 1,
+              ease: "none",
+              scrollTrigger: { trigger: el, start: "top 95%", end: "top 35%", scrub: 0.5 },
+            },
+          );
+        });
 
         // Headings rise line by line. autoSplit re-splits on resize or font load.
         q<HTMLElement>("[data-split]").forEach(el => {
@@ -55,20 +62,11 @@ export function LandingMotion({ children }: { children: React.ReactNode }) {
             onSplit: self =>
               gsap.from(self.lines, {
                 yPercent: 105,
-                duration: 0.9,
+                duration: 1,
                 stagger: 0.08,
                 ease: "ui-out",
                 scrollTrigger: { trigger: el, start: "top 88%", once: true },
               }),
-          });
-        });
-
-        // Labels decode in place (same text, so nothing reflows).
-        q<HTMLElement>("[data-scramble]").forEach(el => {
-          gsap.to(el, {
-            scrambleText: { text: el.textContent ?? "", chars: "01", revealDelay: 0.2, speed: 0.6 },
-            duration: 0.9,
-            scrollTrigger: { trigger: el, start: "top 90%", once: true },
           });
         });
 
@@ -102,7 +100,7 @@ export function LandingMotion({ children }: { children: React.ReactNode }) {
         mm.add(`${list.dataset.stack} and ${MOTION_OK}`, () => {
           const cards = gsap.utils.toArray<HTMLElement>(list.children);
           const last = cards[cards.length - 1];
-          const topFor = (i: number) => 72 + i * 12; // 56px header + 16px, then a 12px peek per card
+          const topFor = (i: number) => 64 + i * 12; // 48px header + 16px, then a 12px peek per card
           const shades: HTMLElement[] = [];
 
           gsap.set(list.querySelectorAll("[data-stack-hide]"), { display: "none" });

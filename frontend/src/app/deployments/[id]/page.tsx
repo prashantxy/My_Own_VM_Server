@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { DeploymentLive } from "@/components/deployment-live";
 import { container } from "@/components/ui";
 import { buildLogsUrl, getDeployment, siteUrl } from "@/lib/api";
@@ -20,20 +20,18 @@ export default async function DeploymentPage(props: PageProps<"/deployments/[id]
   if (!deployment) notFound();
 
   return (
-    <div className={`${container} space-y-6 pt-8 pb-20 sm:pt-10`}>
+    <div className={`${container} space-y-7 pt-6 pb-24 sm:pt-8`}>
       <div className="enter space-y-5" style={{ "--i": 0 } as React.CSSProperties}>
         <Link
           href="/deployments"
-          className="-ms-2 inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm text-muted transition-colors duration-150 hover:text-foreground"
+          className="-ms-2 inline-flex h-9 items-center gap-0.5 rounded-full pe-3 ps-1 text-body text-accent transition-[background-color,opacity] duration-200 hover:bg-fill active:opacity-60"
         >
-          <ArrowLeft aria-hidden strokeWidth={1.5} className="size-4" />
+          <ChevronLeft aria-hidden strokeWidth={2.5} className="size-5" />
           Deployments
         </Link>
-        <div className="space-y-1">
-          <h1 className="truncate text-[1.75rem] leading-[1.15] font-semibold tracking-[-0.02em] sm:text-[2rem]">
-            {repoName(deployment.repoUrl)}
-          </h1>
-          <p className="font-mono text-[0.8125rem] text-muted">{id}</p>
+        <div className="space-y-1.5">
+          <h1 className="truncate text-large-title">{repoName(deployment.repoUrl)}</h1>
+          <p className="font-mono text-footnote text-muted">{id}</p>
         </div>
       </div>
       <DeploymentLive initial={{ ...deployment, siteUrl: siteUrl(id) }} logsUrl={buildLogsUrl()} />

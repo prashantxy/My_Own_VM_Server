@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { ArrowUpRight, CircleX, FileText, GitBranch, RotateCw } from "lucide-react";
+import { ArrowUpRight, FileText, GitBranch, Lock, RotateCw, X } from "lucide-react";
 import { redeploy } from "@/app/actions";
 import type { Deployment, Status } from "@/lib/api";
 import { duration, repoName } from "@/lib/format";
 import { CopyButton } from "./copy-button";
 import { StatusBadge } from "./status-badge";
 import { TimeAgo } from "./time-ago";
-import { buttonClass, Spinner } from "./ui";
+import { buttonClass, groupedList, groupedRow, Spinner, WindowBar } from "./ui";
 
 type LiveDeployment = Deployment & { siteUrl: string | null };
 
@@ -81,88 +81,101 @@ export function DeploymentLive({ initial, logsUrl }: { initial: LiveDeployment; 
 
       <div className="enter flex flex-wrap items-center gap-2" style={{ "--i": 1 } as React.CSSProperties}>
         {status === "deployed" && siteUrl && (
-          <a href={siteUrl} target="_blank" rel="noreferrer" className={buttonClass("primary", "ps-3.5 pe-3")}>
+          <a href={siteUrl} target="_blank" rel="noreferrer" className={buttonClass("primary", "ps-4 pe-3.5")}>
             Visit
-            <ArrowUpRight aria-hidden strokeWidth={2} className="size-4" />
+            <ArrowUpRight aria-hidden strokeWidth={2.25} className="size-4" />
           </a>
         )}
         {status === "deployed" && siteUrl && <CopyButton value={siteUrl} />}
         {repoUrl && !building && <RedeployButton repoUrl={repoUrl} />}
         {repoUrl && (
           <a href={repoUrl} target="_blank" rel="noreferrer" className={buttonClass("secondary")}>
-            <GitBranch aria-hidden strokeWidth={1.5} className="size-4" />
+            <GitBranch aria-hidden strokeWidth={2} className="size-4" />
             Source
           </a>
         )}
         {logsUrl && status !== "failed" && (
           <a href={logsUrl} target="_blank" rel="noreferrer" className={buttonClass("ghost")}>
-            <FileText aria-hidden strokeWidth={1.5} className="size-4" />
+            <FileText aria-hidden strokeWidth={2} className="size-4" />
             Logs
           </a>
         )}
       </div>
 
-      <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-12">
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-10">
         <Preview deployment={deployment} elapsed={elapsed} logsUrl={logsUrl} />
 
         <aside aria-label="Deployment details" className="enter space-y-8" style={{ "--i": 3 } as React.CSSProperties}>
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4 lg:grid-cols-1">
-            <Detail label="Status">
-              <StatusBadge status={status} />
-            </Detail>
-            <Detail label="Duration">
-              <span suppressHydrationWarning className="tabular-nums">
-                {elapsed || "—"}
-              </span>
-            </Detail>
-            <Detail label="Created">
-              <TimeAgo iso={deployment.createdAt} />
-            </Detail>
-            <Detail label="Source">
-              {repoUrl ? (
-                <a href={repoUrl} target="_blank" rel="noreferrer" className="block truncate underline decoration-border underline-offset-4 hover:decoration-foreground" title={repoUrl}>
-                  {repoName(repoUrl)}
-                </a>
-              ) : (
-                "—"
-              )}
-            </Detail>
-            <Detail label="Domain" wide>
-              {host ? (
-                status === "deployed" ? (
-                  <a href={siteUrl!} target="_blank" rel="noreferrer" className="block truncate font-mono underline decoration-border underline-offset-4 hover:decoration-foreground">
-                    {host}
+          <section aria-labelledby="details-heading" className="space-y-2">
+            <h2 id="details-heading" className="px-4 text-footnote font-medium text-muted">
+              Details
+            </h2>
+            <dl className={groupedList}>
+              <Detail label="Status">
+                <StatusBadge status={status} />
+              </Detail>
+              <Detail label="Duration">
+                <span suppressHydrationWarning className="tabular-nums">
+                  {elapsed || "—"}
+                </span>
+              </Detail>
+              <Detail label="Created">
+                <TimeAgo iso={deployment.createdAt} />
+              </Detail>
+              <Detail label="Source">
+                {repoUrl ? (
+                  <a href={repoUrl} target="_blank" rel="noreferrer" className="block truncate text-accent hover:underline hover:underline-offset-4" title={repoUrl}>
+                    {repoName(repoUrl)}
                   </a>
                 ) : (
-                  <span className="block truncate font-mono text-muted">{host}</span>
-                )
-              ) : (
-                <span className="text-muted">Set SITES_DOMAIN to show the site URL</span>
-              )}
-            </Detail>
-          </dl>
+                  "—"
+                )}
+              </Detail>
+              <Detail label="Domain">
+                {host ? (
+                  status === "deployed" ? (
+                    <a href={siteUrl!} target="_blank" rel="noreferrer" className="block truncate font-mono text-footnote text-accent hover:underline hover:underline-offset-4" title={host}>
+                      {host}
+                    </a>
+                  ) : (
+                    <span className="block truncate font-mono text-footnote text-muted" title={host}>
+                      {host}
+                    </span>
+                  )
+                ) : (
+                  <span className="text-muted">Set SITES_DOMAIN</span>
+                )}
+              </Detail>
+            </dl>
+          </section>
 
-          <section aria-labelledby="steps-heading" className="space-y-4 border-t border-border pt-6">
-            <h2 id="steps-heading" className="text-sm font-medium">
+          <section aria-labelledby="steps-heading" className="space-y-2">
+            <h2 id="steps-heading" className="px-4 text-footnote font-medium text-muted">
               Build steps
             </h2>
-            <Steps status={status} />
+            <div className={`${groupedList} p-4`}>
+              <Steps status={status} />
+            </div>
           </section>
         </aside>
       </div>
 
       {pollError && (
-        <p className="text-sm text-warning">Lost contact with the API. Retrying…</p>
+        <p role="status" className="material fixed inset-x-4 bottom-4 z-30 mx-auto flex max-w-sm items-center gap-2.5 rounded-full px-4 py-2.5 text-footnote shadow-window">
+          <Spinner className="size-4 text-dot-warning" />
+          Lost contact with the API. Retrying…
+        </p>
       )}
     </div>
   );
 }
 
-function Detail({ label, wide, children }: { label: string; wide?: boolean; children: React.ReactNode }) {
+// A settings-style row: label on the leading edge, value on the trailing edge.
+function Detail({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className={`min-w-0 ${wide ? "col-span-2 sm:col-span-4 lg:col-span-1" : ""}`}>
-      <dt className="mb-1 text-[0.8125rem] text-muted">{label}</dt>
-      <dd className="min-w-0 text-sm">{children}</dd>
+    <div className={`flex min-h-11 items-center justify-between gap-4 px-4 py-2.5 text-callout ${groupedRow()}`}>
+      <dt className="shrink-0">{label}</dt>
+      <dd className="min-w-0 text-end text-muted">{children}</dd>
     </div>
   );
 }
@@ -188,7 +201,7 @@ function RedeployButton({ repoUrl }: { repoUrl: string }) {
         Redeploy
       </button>
       {error && (
-        <p role="alert" className="basis-full text-sm text-danger">
+        <p role="alert" className="basis-full text-footnote text-danger">
           {error}
         </p>
       )}
@@ -201,22 +214,20 @@ function Preview({ deployment, elapsed, logsUrl }: { deployment: LiveDeployment;
   const host = siteUrl?.replace("https://", "") ?? deployment.id;
 
   return (
-    <div className="enter rounded-2xl bg-surface p-1.5 shadow-card" style={{ "--i": 2 } as React.CSSProperties}>
-      <div className="flex h-8 items-center gap-3 px-2.5">
-        <span aria-hidden className="flex gap-1.5">
-          <span className="size-2 rounded-full bg-border" />
-          <span className="size-2 rounded-full bg-border" />
-          <span className="size-2 rounded-full bg-border" />
-        </span>
-        <span className="min-w-0 flex-1 truncate text-center font-mono text-xs text-muted">{host}</span>
-        <span aria-hidden className="w-[2.625rem]" />
-      </div>
+    <div className="enter overflow-hidden rounded-[14px] bg-canvas shadow-window" style={{ "--i": 2 } as React.CSSProperties}>
+      <WindowBar
+        className="border-b border-separator"
+        title={
+          <span className="inline-flex max-w-full items-center gap-1.5 rounded-md bg-fill px-2.5 py-0.5 font-normal">
+            <Lock aria-hidden strokeWidth={2.25} className="size-3 shrink-0" />
+            <span className="truncate">{host}</span>
+          </span>
+        }
+      />
 
-      <div
-        className="relative aspect-[16/10] min-h-64 overflow-hidden rounded-[10px] bg-background shadow-card"
-      >
+      <div className="relative aspect-[16/10] min-h-64 overflow-hidden bg-elevated">
         {status === "deployed" && siteUrl ? (
-          <a href={siteUrl} target="_blank" rel="noreferrer" aria-label={`Open ${host} in a new tab`} className="group absolute inset-0 block rounded-[10px]">
+          <a href={siteUrl} target="_blank" rel="noreferrer" aria-label={`Open ${host} in a new tab`} className="group absolute inset-0 block">
             <iframe
               src={siteUrl}
               title={`Preview of ${host}`}
@@ -226,28 +237,30 @@ function Preview({ deployment, elapsed, logsUrl }: { deployment: LiveDeployment;
               sandbox="allow-scripts allow-same-origin"
               className="pointer-events-none h-[200%] w-[200%] origin-top-left scale-50 border-0 bg-white"
             />
-            <span className="absolute end-3 bottom-3 inline-flex items-center gap-1 rounded-lg bg-background/90 px-2.5 py-1.5 text-xs font-medium opacity-0 shadow-card backdrop-blur transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
+            <span className="material absolute end-3 bottom-3 inline-flex translate-y-1 items-center gap-1 rounded-full px-3.5 py-2 text-footnote font-medium opacity-0 shadow-window transition-[opacity,translate] duration-300 ease-spring group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
               Open site
-              <ArrowUpRight aria-hidden strokeWidth={2} className="size-3.5" />
+              <ArrowUpRight aria-hidden strokeWidth={2.25} className="size-3.5" />
             </span>
           </a>
         ) : status === "queued" ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
-            <div aria-hidden className="progress-indeterminate absolute inset-x-0 top-0 h-0.5 bg-warning/15" />
-            <Spinner className="size-5 text-warning" />
-            <div>
-              <p className="text-sm font-medium">Building</p>
-              <p suppressHydrationWarning className="text-sm text-muted tabular-nums">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-center">
+            <div aria-hidden className="progress-indeterminate absolute inset-x-0 top-0 h-0.5 bg-dot-warning/15" />
+            <Spinner className="size-7 text-dot-warning" />
+            <div className="space-y-0.5">
+              <p className="text-title">Building</p>
+              <p suppressHydrationWarning className="text-callout text-muted tabular-nums">
                 {elapsed ? `${elapsed} elapsed` : "Starting…"}
               </p>
             </div>
           </div>
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
-            <CircleX aria-hidden strokeWidth={1.5} className="size-6 text-danger" />
-            <div className="max-w-xs">
-              <p className="text-sm font-medium">Build failed</p>
-              <p className="text-sm text-pretty text-muted">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
+            <span className="flex size-12 items-center justify-center rounded-full bg-dot-danger text-white">
+              <X aria-hidden strokeWidth={2.75} className="size-6" />
+            </span>
+            <div className="max-w-xs space-y-1">
+              <p className="text-title">Build failed</p>
+              <p className="text-callout text-pretty text-muted">
                 The build or upload step didn’t finish. The workflow logs show which command failed.
               </p>
             </div>
@@ -291,16 +304,16 @@ function Steps({ status }: { status: Status }) {
             {i < steps.length - 1 && (
               <span
                 aria-hidden
-                className={`absolute start-[9.5px] top-6 bottom-1 w-px ${state === "done" ? "bg-success/40" : "bg-border"}`}
+                className={`absolute start-[11px] top-7 bottom-1 w-0.5 rounded-full ${state === "done" ? "bg-dot-success/50" : "bg-fill-strong"}`}
               />
             )}
             <StepMarker state={state} />
-            <div className={`-mt-px ${state === "pending" ? "text-muted" : ""}`}>
-              <p className="text-sm font-medium">
+            <div className={`pt-0.5 ${state === "pending" ? "text-muted" : ""}`}>
+              <p className="text-callout font-semibold">
                 {step.label}
                 <span className="sr-only">, {stateLabel[state]}</span>
               </p>
-              <p className="text-sm text-muted">
+              <p className="text-footnote text-muted">
                 {state === "failed" ? "Failed. Open the build logs to see the error." : step.detail}
               </p>
             </div>
@@ -319,11 +332,11 @@ const stateLabel: Record<StepState, string> = {
 };
 
 function StepMarker({ state }: { state: StepState }) {
-  const ring = "relative flex size-5 shrink-0 items-center justify-center rounded-full";
+  const ring = "relative flex size-6 shrink-0 items-center justify-center rounded-full";
   if (state === "done") {
     return (
-      <span aria-hidden className={`${ring} bg-success text-background`}>
-        <svg viewBox="0 0 12 12" className="size-3" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <span aria-hidden className={`${ring} bg-dot-success text-white`}>
+        <svg viewBox="0 0 12 12" className="size-3" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round">
           <path d="m2.5 6.25 2.25 2.25 4.75-5" />
         </svg>
       </span>
@@ -331,8 +344,8 @@ function StepMarker({ state }: { state: StepState }) {
   }
   if (state === "failed") {
     return (
-      <span aria-hidden className={`${ring} bg-danger text-background`}>
-        <svg viewBox="0 0 12 12" className="size-3" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+      <span aria-hidden className={`${ring} bg-dot-danger text-white`}>
+        <svg viewBox="0 0 12 12" className="size-3" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round">
           <path d="m3.5 3.5 5 5m0-5-5 5" />
         </svg>
       </span>
@@ -340,11 +353,11 @@ function StepMarker({ state }: { state: StepState }) {
   }
   if (state === "active") {
     return (
-      <span aria-hidden className={`${ring} bg-background shadow-[inset_0_0_0_1.5px_var(--warning)]`}>
-        <span className="size-2 rounded-full bg-warning motion-safe:animate-pulse" />
+      <span aria-hidden className={`${ring} bg-elevated shadow-[inset_0_0_0_2px_var(--dot-warning)]`}>
+        <span className="size-2.5 rounded-full bg-dot-warning motion-safe:animate-pulse" />
       </span>
     );
   }
-  return <span aria-hidden className={`${ring} bg-background shadow-[inset_0_0_0_1.5px_var(--border)]`} />;
+  return <span aria-hidden className={`${ring} bg-elevated shadow-[inset_0_0_0_2px_var(--fill-strong)]`} />;
 }
 

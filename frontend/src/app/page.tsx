@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Activity, ArrowRight, Globe, RotateCw, Route, ShieldCheck, Zap } from "lucide-react";
+import { Activity, ArrowRight, ChevronRight, Globe, RotateCw, Route, ShieldCheck, Zap } from "lucide-react";
 import { DeployForm } from "@/components/deploy-form";
 import { DeploymentList } from "@/components/deployment-list";
 import { GitHubMark } from "@/components/github-mark";
@@ -8,9 +8,8 @@ import { Architecture } from "@/components/landing/architecture";
 import { DeployRun } from "@/components/landing/deploy-run";
 import { LandingMotion } from "@/components/landing/landing-motion";
 import { Marquee } from "@/components/landing/marquee";
-import { SectionHeader } from "@/components/landing/section-header";
 import { DeployLink } from "@/components/site-nav";
-import { buttonClass, container } from "@/components/ui";
+import { buttonClass, container, containerWide, SectionHeading } from "@/components/ui";
 import { listDeployments, repoPageUrl, siteUrl, sitesDomain } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -42,34 +41,41 @@ const stats = [
   { value: 15, label: "minute limit per build before it’s stopped" },
 ];
 
+// Icon tiles in the style of system settings: one system color per idea, white glyph.
 const features = [
   {
     Icon: ShieldCheck,
+    tint: "bg-[#34c759]",
     title: "Untrusted code never sees a secret",
     body: "The build job runs with no secrets and no token permissions. R2 credentials only exist in the upload job, which never runs your code.",
   },
   {
     Icon: Globe,
+    tint: "bg-[#007aff]",
     title: "A subdomain for every deploy",
     body: "Each deployment gets its own ID and URL. Older deploys stay up, so you can compare versions side by side.",
   },
   {
     Icon: Route,
+    tint: "bg-[#ff9500]",
     title: "Client-side routing just works",
     body: "Paths without a file extension fall back to index.html, so refreshing a deep link in a single-page app still loads.",
   },
   {
     Icon: Zap,
+    tint: "bg-[#ffcc00] text-[#1d1d1f]!",
     title: "Sensible caching",
     body: "HTML is served with no-cache, so browsers always check for a fresh copy. Scripts, styles and images are cached for an hour.",
   },
   {
     Icon: Activity,
+    tint: "bg-[#ff2d55]",
     title: "Live build status",
     body: "The deployment page updates while the build runs, and the tab title flips to Ready or Failed when it’s done.",
   },
   {
     Icon: RotateCw,
+    tint: "bg-[#5856d6]",
     title: "One-click redeploy",
     body: "Rebuild the latest commit into a fresh subdomain without pasting the URL again.",
   },
@@ -83,74 +89,96 @@ export default function Home() {
     <LandingMotion>
       {/* Hero */}
       <section aria-labelledby="hero-heading" className="relative isolate overflow-clip">
-        <div aria-hidden className="hero-grid pointer-events-none absolute inset-0 -z-10" />
-        <div aria-hidden data-follow className="hero-light pointer-events-none invisible absolute top-0 left-0 -z-10 size-[36rem]" />
-        <div className={`${container} grid items-center gap-12 pt-14 pb-20 sm:pt-20 sm:pb-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,27rem)] lg:gap-16`}>
-          <div className="min-w-0 space-y-8">
-            <div className="space-y-5">
-              <div data-intro="pill">
-                <Suspense fallback={<LivePill />}>
-                  <LiveCount />
-                </Suspense>
-              </div>
-              <h1
-                id="hero-heading"
-                data-intro
-                className="text-[2.5rem] leading-[1.05] font-semibold tracking-[-0.035em] text-balance sm:text-[3.25rem]"
-              >
-                Ship a frontend from any Git repo.
-              </h1>
-              <p data-intro="copy" className="max-w-md text-lg text-pretty text-muted">
-                Paste a repository. It’s built on GitHub Actions, stored in R2 and served from its own subdomain on
-                Cloudflare. No servers to run.
-              </p>
-            </div>
+        <div aria-hidden className="hero-aura pointer-events-none absolute inset-x-0 -top-24 -z-10 h-[46rem]" />
+        <div className={`${container} flex flex-col items-center pt-14 text-center sm:pt-24`}>
+          <div data-intro="pill">
+            <Suspense fallback={<LivePill />}>
+              <LiveCount />
+            </Suspense>
+          </div>
 
-            <div id="deploy" data-intro="form" className="scroll-mt-24 rounded-2xl bg-background p-5 shadow-card sm:p-6">
+          <h1 id="hero-heading" data-intro="title" className="mt-6 text-display text-balance">
+            <span className="block overflow-clip pb-[0.06em]">
+              <span data-line className="block">
+                Ship a frontend.
+              </span>
+            </span>
+            <span className="-mt-[0.06em] block overflow-clip pb-[0.1em]">
+              <span data-line className="text-gradient block">
+                From any Git repo.
+              </span>
+            </span>
+          </h1>
+
+          <p data-intro="copy" className="mt-5 max-w-2xl text-lede text-pretty text-muted">
+            Paste a repository. It’s built on GitHub Actions, stored in R2 and served from its own subdomain on Cloudflare. No
+            servers to run.
+          </p>
+
+          <div
+            id="deploy"
+            data-intro="form"
+            className="material-thick mt-10 w-full max-w-2xl scroll-mt-24 rounded-[28px] p-3 text-start shadow-window sm:p-4"
+          >
+            <div className="px-1 pt-1 sm:px-0 sm:pt-0">
               <DeployForm />
             </div>
           </div>
 
-          <div data-intro="visual" className="min-w-0">
-            <DeployRun domain={domain} />
+          <div data-intro="links" className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-callout">
+            <Link href="#how" className="group inline-flex items-center text-accent hover:underline hover:underline-offset-4">
+              How it works
+              <ChevronRight aria-hidden strokeWidth={2.25} className="size-4 transition-transform duration-200 ease-spring group-hover:translate-x-0.5" />
+            </Link>
+            <Link href="/deployments" className="group inline-flex items-center text-accent hover:underline hover:underline-offset-4">
+              See deployments
+              <ChevronRight aria-hidden strokeWidth={2.25} className="size-4 transition-transform duration-200 ease-spring group-hover:translate-x-0.5" />
+            </Link>
           </div>
         </div>
-      </section>
 
-      {/* Frameworks */}
-      <section data-intro="strip" aria-label="Supported frameworks" className="border-y border-border bg-surface">
-        <div className={`${container} flex flex-col gap-4 py-6 sm:flex-row sm:items-center sm:gap-8`}>
-          <p className="shrink-0 text-sm text-muted">Builds anything that outputs static files</p>
+        {/* The build window leans back and settles flat as you scroll to it. */}
+        <div className={`${container} pt-16 pb-16 sm:pt-20 sm:pb-24`}>
+          <div data-intro="visual" className="[perspective:1600px]">
+            <div data-tilt className="mx-auto max-w-3xl origin-bottom">
+              <DeployRun domain={domain} />
+            </div>
+          </div>
+        </div>
+
+        <div data-intro="strip" aria-label="Supported frameworks" role="region" className={`${container} flex flex-col items-center gap-5 pb-20 sm:pb-28`}>
+          <p className="text-footnote text-muted">Builds anything that outputs static files</p>
           <Marquee items={frameworks} />
         </div>
       </section>
 
       {/* How it works */}
-      <section id="how" aria-labelledby="how-heading" className="scroll-mt-14">
-        <div className={`${container} space-y-10 py-20 sm:py-28`}>
-          <SectionHeader id="how-heading" eyebrow="How it works" title="From repository to URL in three steps.">
+      <section id="how" aria-labelledby="how-heading" className="scroll-mt-12 bg-canvas">
+        <div className={`${containerWide} space-y-14 py-24 sm:py-32`}>
+          <SectionHeading id="how-heading" eyebrow="How it works" title="Three steps." quiet="One paste." align="center">
             You paste one link. Everything after that runs on infrastructure you already have.
-          </SectionHeader>
-          <ol data-stack="(max-width: 767px)" className="grid gap-4 md:grid-cols-3">
+          </SectionHeading>
+
+          <ol data-stack="(max-width: 767px)" className="grid gap-4 md:grid-cols-3 md:gap-5">
             {steps.map((step, i) => (
-              <li key={step.title} data-reveal className="relative flex flex-col rounded-xl bg-background p-5 shadow-card">
-                <span data-scramble className="font-mono text-xs text-muted tabular-nums">
-                  0{i + 1}
+              <li key={step.title} data-reveal className="relative flex flex-col rounded-[28px] bg-elevated p-7 shadow-card">
+                <span className="flex size-8 items-center justify-center rounded-full bg-accent text-footnote font-semibold text-white tabular-nums">
+                  {i + 1}
                 </span>
-                <h3 className="mt-3 font-medium">{step.title}</h3>
-                <p className="mt-1.5 flex-1 text-sm text-pretty text-muted">{step.body}</p>
-                <code className="mt-5 block truncate rounded-lg bg-surface px-3 py-2 font-mono text-[0.8125rem] shadow-card">
+                <h3 className="mt-6 text-title">{step.title}</h3>
+                <p className="mt-2 flex-1 text-callout text-pretty text-muted">{step.body}</p>
+                <code className="mt-6 block truncate rounded-[14px] bg-fill px-3.5 py-2.5 font-mono text-footnote">
                   {step.snippet.replace("<domain>", domain)}
                 </code>
               </li>
             ))}
           </ol>
 
-          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-border shadow-card lg:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-4 md:gap-5 lg:grid-cols-4">
             {stats.map(stat => (
-              <div key={stat.label} data-reveal className="flex flex-col-reverse gap-1 bg-background p-5">
-                <dt className="text-sm text-pretty text-muted">{stat.label}</dt>
-                <dd data-count={stat.value} className="text-[2.25rem] leading-none font-semibold tracking-[-0.03em] tabular-nums">
+              <div key={stat.label} data-reveal className="flex flex-col-reverse gap-2 rounded-[28px] bg-elevated p-7 shadow-card">
+                <dt className="text-callout text-pretty text-muted">{stat.label}</dt>
+                <dd data-count={stat.value} className="text-[3.5rem] leading-none font-bold tracking-[-0.04em] tabular-nums">
                   {stat.value}
                 </dd>
               </div>
@@ -163,22 +191,24 @@ export default function Home() {
       <Architecture />
 
       {/* Features */}
-      <section aria-labelledby="features-heading" className="border-t border-border">
-        <div className={`${container} space-y-10 py-20 sm:py-28`}>
-          <SectionHeader id="features-heading" eyebrow="Details" title="The parts you’d otherwise build yourself." />
-          <ul data-stack="(max-width: 767px)" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {features.map(({ Icon, title, body }) => (
+      <section aria-labelledby="features-heading" className="bg-canvas">
+        <div className={`${containerWide} space-y-14 py-24 sm:py-32`}>
+          <SectionHeading id="features-heading" eyebrow="Details" title="Built in." quiet="Not bolted on." align="center">
+            The parts you’d otherwise build yourself, already there on every deploy.
+          </SectionHeading>
+          <ul data-stack="(max-width: 767px)" className="grid gap-4 md:grid-cols-2 md:gap-5 lg:grid-cols-3">
+            {features.map(({ Icon, tint, title, body }) => (
               <li
                 key={title}
                 data-reveal
                 data-spotlight
-                className="spotlight group relative space-y-3 overflow-hidden rounded-xl bg-background p-5 shadow-card transition-shadow duration-150 hover:shadow-card-hover"
+                className="spotlight relative overflow-hidden rounded-[28px] bg-elevated p-7 shadow-card transition-shadow duration-300 ease-spring hover:shadow-card-hover"
               >
-                <span className="flex size-8 items-center justify-center rounded-lg bg-surface shadow-card">
-                  <Icon aria-hidden strokeWidth={1.5} className="size-4" />
+                <span className={`flex size-11 items-center justify-center rounded-[12px] text-white shadow-[inset_0_0_0_0.5px_rgb(0_0_0/0.08)] ${tint}`}>
+                  <Icon aria-hidden strokeWidth={2} className="size-[22px]" />
                 </span>
-                <h3 className="font-medium">{title}</h3>
-                <p className="text-sm text-pretty text-muted">{body}</p>
+                <h3 className="mt-6 text-title">{title}</h3>
+                <p className="mt-2 text-callout text-pretty text-muted">{body}</p>
               </li>
             ))}
           </ul>
@@ -191,27 +221,24 @@ export default function Home() {
       </Suspense>
 
       {/* Closing CTA */}
-      <section aria-labelledby="cta-heading" className={`${container} pb-20 sm:pb-28`}>
-        <div
-          data-reveal
-          className="relative isolate overflow-hidden rounded-3xl bg-foreground px-6 py-16 text-center text-background sm:px-12 sm:py-24"
-        >
+      <section aria-labelledby="cta-heading" className={`${containerWide} py-24 sm:py-32`}>
+        <div data-reveal className="relative isolate overflow-hidden rounded-[36px] bg-[#0b0b0d] px-6 py-20 text-center text-white sm:px-12 sm:py-28">
           <div aria-hidden className="cta-glow pointer-events-none absolute inset-0 -z-10" />
           <div aria-hidden data-follow className="cta-light pointer-events-none invisible absolute top-0 left-0 -z-10 size-[28rem]" />
-          <h2 id="cta-heading" data-split className="text-[1.75rem] leading-[1.15] font-semibold tracking-[-0.02em] text-balance sm:text-[2.5rem]">
+          <h2 id="cta-heading" data-split className="text-headline text-balance">
             Your next deploy is one paste away.
           </h2>
-          <p className="mx-auto mt-3 max-w-md text-pretty opacity-70">Bring a repository. Leave with a URL you can share.</p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <p className="mx-auto mt-4 max-w-md text-lede text-pretty text-white/70">Bring a repository. Leave with a URL you can share.</p>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <span data-magnetic className="inline-flex">
-              <DeployLink className={buttonClass("inverse", "h-10 ps-4 pe-3.5")}>
+              <DeployLink className={buttonClass("inverse", "h-12 ps-6 pe-5 text-body")}>
                 Deploy a repository
-                <ArrowRight aria-hidden strokeWidth={2} className="size-4" />
+                <ArrowRight aria-hidden strokeWidth={2.25} className="size-4" />
               </DeployLink>
             </span>
             {repo && (
               <span data-magnetic className="inline-flex">
-                <a href={repo} target="_blank" rel="noreferrer" className={buttonClass("inverse-outline", "h-10")}>
+                <a href={repo} target="_blank" rel="noreferrer" className={buttonClass("inverse-outline", "h-12 px-6 text-body")}>
                   <GitHubMark />
                   View source
                 </a>
@@ -228,20 +255,20 @@ function LivePill({ count }: { count?: number }) {
   return (
     <Link
       href="/deployments"
-      className="inline-flex h-7 items-center gap-2 rounded-full bg-background ps-2.5 pe-3 text-[0.8125rem] text-muted shadow-card transition-[box-shadow,color] duration-150 hover:text-foreground hover:shadow-card-hover"
+      className="material group inline-flex h-8 items-center gap-2 rounded-full ps-3 pe-2.5 text-footnote text-muted shadow-card transition-[box-shadow,color,scale] duration-200 ease-spring-snappy hover:text-foreground hover:shadow-card-hover active:scale-[0.96]"
     >
-      <span className="relative flex size-1.5" aria-hidden>
-        <span className="absolute inset-0 rounded-full bg-success/50 motion-safe:animate-ping" />
-        <span className="size-1.5 rounded-full bg-success" />
+      <span className="relative flex size-2" aria-hidden>
+        <span className="absolute inset-0 rounded-full bg-dot-success/50 motion-safe:animate-ping" />
+        <span className="size-2 rounded-full bg-dot-success" />
       </span>
       {count ? (
         <span>
-          <span className="font-medium text-foreground tabular-nums">{count}</span> {count === 1 ? "site" : "sites"} live
+          <span className="font-semibold text-foreground tabular-nums">{count}</span> {count === 1 ? "site" : "sites"} live now
         </span>
       ) : (
-        <span>Runs on Cloudflare</span>
+        <span>Runs entirely on Cloudflare</span>
       )}
-      <ArrowRight aria-hidden strokeWidth={1.5} className="size-3.5" />
+      <ChevronRight aria-hidden strokeWidth={2.25} className="size-3.5 transition-transform duration-200 ease-spring group-hover:translate-x-0.5" />
     </Link>
   );
 }
@@ -258,21 +285,18 @@ async function RecentDeployments() {
 
   // Streams in after the page's motion is set up, so it uses the CSS entrance on its rows instead.
   return (
-    <section aria-labelledby="recent-heading" className="border-t border-border">
-      <div className={`${container} space-y-8 py-20 sm:py-28`}>
+    <section aria-labelledby="recent-heading">
+      <div className={`${container} space-y-10 py-24 sm:py-32`}>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-xl space-y-3">
-            <p className="font-mono text-xs text-muted">Recently shipped</p>
-            <h2 id="recent-heading" className="text-[1.75rem] leading-[1.15] font-semibold tracking-[-0.02em] text-balance sm:text-[2rem]">
+            <p className="text-callout font-semibold text-accent">Recently shipped</p>
+            <h2 id="recent-heading" className="two-tone text-large-title text-balance">
               Fresh off the build queue.
             </h2>
           </div>
-          <Link
-            href="/deployments"
-            className="-me-2 inline-flex h-9 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-muted transition-colors duration-150 hover:text-foreground"
-          >
+          <Link href="/deployments" className="group inline-flex h-9 items-center text-callout text-accent hover:underline hover:underline-offset-4">
             View all
-            <ArrowRight aria-hidden strokeWidth={2} className="size-4" />
+            <ChevronRight aria-hidden strokeWidth={2.25} className="size-4 transition-transform duration-200 ease-spring group-hover:translate-x-0.5" />
           </Link>
         </div>
         <DeploymentList items={recent} />
